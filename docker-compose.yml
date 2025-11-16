@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:latest
+    container_name: tictactoe_db
+    restart: always
+    ports:
+      - "27017:27017" # Expose MongoDB port to host
+    environment:
+      # MongoDB Root User Credentials (REQUIRED for security/Mongo Express to connect)
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      # Persistent storage for database files
+      - mongo-data:/data/db
+
+  # Mongo Express Service
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081" # Expose Mongo Express web interface
+    environment:
+      # Mongo Express connection details to MongoDB
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+      # Connection URL - uses the MongoDB service name (mongodb) as the host
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin@tictactoe_db:27017/
+
+      # Optional: User/Pass for Basic HTTP Auth on Mongo Express itself
+      # ME_CONFIG_BASICAUTH_USERNAME: expressuser
+      # ME_CONFIG_BASICAUTH_PASSWORD: expresspassword
+    depends_on:
+      - mongodb
+
+# Volumes definition for persistent data
+volumes:
+  mongo-data:

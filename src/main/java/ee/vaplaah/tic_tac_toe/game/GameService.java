@@ -5,11 +5,13 @@ import ee.vaplaah.tic_tac_toe.game.dto.GameDto;
 import ee.vaplaah.tic_tac_toe.game.request.CreateGameRequest;
 import ee.vaplaah.tic_tac_toe.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GameService {
@@ -23,8 +25,9 @@ public class GameService {
     }
 
     public Mono<GameDto> createGame(CreateGameRequest request) {
+        log.info("[System log] Creating new game with request: {}", request);
         String creatorId = request.getCreatorId();
-        return userRepository.findById(creatorId) // 1. Try to fetch the User (Mono<User>)
+        return userRepository.findById(creatorId)
             .switchIfEmpty(Mono.error(new InvalidResourceIdException("User with id " + creatorId + " does not exist")))
             .map(existingUser -> {
                 Integer boardSize = request.getBoardSize();

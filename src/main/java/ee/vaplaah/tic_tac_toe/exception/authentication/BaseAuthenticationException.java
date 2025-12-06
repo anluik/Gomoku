@@ -7,7 +7,7 @@ import org.springframework.security.core.AuthenticationException;
 
 /**
  * Base class for all custom authentication-related exceptions.
- * Extends AuthenticationException so that the exceptions would be caught by
+ * Extends AuthenticationException so that the exceptions would be caught by AuthenticationFailureHandler.
  */
 @Getter
 public class BaseAuthenticationException extends AuthenticationException {

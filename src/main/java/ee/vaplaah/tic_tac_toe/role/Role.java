@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -13,7 +12,6 @@ import org.springframework.security.core.GrantedAuthority;
 
 @Data
 @Document
-@ToString
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor

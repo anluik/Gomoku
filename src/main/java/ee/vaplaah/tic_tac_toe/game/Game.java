@@ -11,7 +11,6 @@ import java.util.List;
 
 @Data
 @Document
-@ToString
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor

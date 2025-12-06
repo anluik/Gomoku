@@ -10,3 +10,15 @@ spring:
 
 server:
   port: 8088
+
+jwt:
+  secret: 11a60fc879d82fbf89062742e815f1b57ef3565fe7c2e01d4acff287254988cc395dec0968f5714da0578dd961d09109e2623aa2574ae349d056f023b67f57de
+  access-token-expiration-seconds: 60 # 1 hour
+  refresh-token-expiration-seconds: 240 # 24 hours
+
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG

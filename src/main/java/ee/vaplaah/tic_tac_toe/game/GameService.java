@@ -25,7 +25,7 @@ public class GameService {
     }
 
     public Mono<GameDto> createGame(CreateGameRequest request) {
-        log.info("[System log] Creating new game with request: {}", request);
+        log.info("[GameService] Creating new game with request: {}", request);
         String creatorId = request.getCreatorId();
         return userRepository.findById(creatorId)
             .switchIfEmpty(Mono.error(new InvalidResourceIdException("User with id " + creatorId + " does not exist")))

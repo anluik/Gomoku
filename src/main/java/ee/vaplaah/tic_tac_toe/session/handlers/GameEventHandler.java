@@ -21,7 +21,7 @@ public class GameEventHandler implements WebSocketHandler {
     @NonNull
     @Override
     public Mono<Void> handle(@NonNull WebSocketSession session) {
-        log.info("[System log] WebSocket connection established to game {}", session.getId()); // TODO: include user ID in the message
+        log.info("[GameEventHandler] WebSocket connection established to game {}", session.getId()); // TODO: include user ID in the message
 
         return session.receive()
             .map(WebSocketMessage::getPayloadAsText)
@@ -31,7 +31,7 @@ public class GameEventHandler implements WebSocketHandler {
     }
 
     private void handleValidGameEvent(GameEvent event) {
-        log.info("[System log] Received valid GameEvent message: {}", event);
+        log.info("[GameEventHandler] Received valid GameEvent message: {}", event);
         // Your successful business logic here
     }
 }

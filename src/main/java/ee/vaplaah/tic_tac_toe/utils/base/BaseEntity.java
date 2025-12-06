@@ -1,22 +1,26 @@
 package ee.vaplaah.tic_tac_toe.utils.base;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
 public abstract class BaseEntity {
+
+    @Id
+    private String id;
 
     @CreatedDate
     private LocalDateTime createdAt;
-//    @CreatedBy
-//    private String createdBy; // TODO: use User type https://docs.spring.io/spring-data/jpa/reference/auditing.html#auditing.reactive-auditor-aware
     @LastModifiedDate
     private LocalDateTime updatedAt;
-//    @LastModifiedBy
-//    private String updatedBy; // TODO: use User type
 }

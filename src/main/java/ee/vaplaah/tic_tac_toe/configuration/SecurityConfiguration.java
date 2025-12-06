@@ -1,5 +1,6 @@
 package ee.vaplaah.tic_tac_toe.configuration;
 
+import ee.vaplaah.tic_tac_toe.authentication.AccessDeniedHandler;
 import ee.vaplaah.tic_tac_toe.authentication.JwtAuthenticationEntryPoint;
 import ee.vaplaah.tic_tac_toe.configuration.filter.AuthenticationFilter;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfiguration {
 
+    private final AccessDeniedHandler accessDeniedHandler;
     private final AuthenticationFilter authenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
@@ -31,9 +33,12 @@ public class SecurityConfiguration {
                 .pathMatchers("/api/admin/**").hasRole("ADMIN")
                 .pathMatchers("/api/v1/**").hasRole("USER")
                 .anyExchange().authenticated())
-            .exceptionHandling(exceptionHandling ->
+            .exceptionHandling(exceptionHandling -> exceptionHandling
                 // "entry point" into the process of challenging the client for credentials after AuthenticationException
-                exceptionHandling.authenticationEntryPoint(jwtAuthenticationEntryPoint))
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                // custom handler for AccessDeniedException
+                .accessDeniedHandler(accessDeniedHandler)
+            )
             .addFilterAt(authenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
             .formLogin(ServerHttpSecurity.FormLoginSpec::disable);
 

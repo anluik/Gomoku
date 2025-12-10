@@ -11,10 +11,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public abstract class BaseDto {
 
+    private String id;
     private LocalDateTime createdAt;
-//    @CreatedBy
-//    private String createdBy; // TODO: use User type https://docs.spring.io/spring-data/jpa/reference/auditing.html#auditing.reactive-auditor-aware
+    private String createdBy;
     private LocalDateTime updatedAt;
-//    @LastModifiedBy
-//    private String updatedBy; // TODO: use User type
+    private String updatedBy;
 }

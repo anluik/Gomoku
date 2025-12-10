@@ -3,7 +3,6 @@ package ee.vaplaah.tic_tac_toe.session.message;
 import ee.vaplaah.tic_tac_toe.enums.GameEventType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
-import lombok.ToString;
 
 @Getter
 public class GameEvent {
@@ -12,5 +11,5 @@ public class GameEvent {
     private Long gameId;
 
     @NotNull(message = "Event type not specified")
-    GameEventType type;
+    private GameEventType type;
 }

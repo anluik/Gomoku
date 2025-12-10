@@ -1,9 +1,8 @@
 package ee.vaplaah.tic_tac_toe.game;
 
-import ee.vaplaah.tic_tac_toe.exception.InvalidResourceIdException;
 import ee.vaplaah.tic_tac_toe.game.dto.GameDto;
 import ee.vaplaah.tic_tac_toe.game.request.CreateGameRequest;
-import ee.vaplaah.tic_tac_toe.user.UserRepository;
+import ee.vaplaah.tic_tac_toe.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,7 +16,6 @@ import java.util.List;
 public class GameService {
 
     private final GameRepository gameRepository;
-    private final UserRepository userRepository;
 
     public Mono<GameDto> findById(String gameId) {
         return gameRepository.findById(gameId)
@@ -25,19 +23,19 @@ public class GameService {
     }
 
     public Mono<GameDto> createGame(CreateGameRequest request) {
-        log.info("[GameService] Creating new game with request: {}", request);
-        String creatorId = request.getCreatorId();
-        return userRepository.findById(creatorId)
-            .switchIfEmpty(Mono.error(new InvalidResourceIdException("User with id " + creatorId + " does not exist")))
-            .map(existingUser -> {
+        log.info("[GameService] Creating new game");
+        return SecurityUtils.getUser()
+            .flatMap(user -> {
+                String creatorId = user.getId();
                 Integer boardSize = request.getBoardSize();
-                return Game.builder()
+                Game build = Game.builder()
                     .boardSize(boardSize)
+                    .winningCount(request.getWinningCount())
                     .board(new String[boardSize][boardSize])
                     .players(List.of(creatorId))
                     .build();
-            })
-            .flatMap(gameRepository::save)
-            .map(GameDto::from);
+                return gameRepository.save(build)
+                    .flatMap(game -> Mono.just(GameDto.from(game)));
+            });
     }
 }

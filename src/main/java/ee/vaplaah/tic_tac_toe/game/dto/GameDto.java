@@ -13,12 +13,10 @@ import java.util.List;
 
 @Getter
 @SuperBuilder
-@Jacksonized
 @NoArgsConstructor
 @AllArgsConstructor
 public class GameDto extends BaseDto {
 
-    private String id;
     private Integer boardSize;
     private Integer winningCount;
     private String[][] board;
@@ -40,6 +38,10 @@ public class GameDto extends BaseDto {
             .lastPlayer(game.getLastPlayer())
             .isOver(game.isOver())
             .moves(game.getMoves())
+            .createdAt(game.getCreatedAt())
+            .createdBy(game.getCreatedBy())
+            .updatedAt(game.getUpdatedAt())
+            .updatedBy(game.getUpdatedBy())
             .build();
     }
 }

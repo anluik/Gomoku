@@ -20,6 +20,7 @@ public class Game extends BaseEntity {
     private Integer boardSize; // number of cells in each director
     private Integer winningCount; // how many pieces in a row to win
     private String[][] board; // every value is a player's ID
+    // TODO: store moves?
 
     @Builder.Default
     private List<String> players = new ArrayList<>(); // players in the game

@@ -1,6 +1,7 @@
 package ee.vaplaah.tic_tac_toe.exception;
 
 import ee.vaplaah.tic_tac_toe.enums.ErrorCode;
+import ee.vaplaah.tic_tac_toe.exception.types.RequestViolation;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.HttpStatus;
@@ -17,11 +18,11 @@ public class CommonException extends RuntimeException {
 
     private final ErrorCode errorCode;
     private final HttpStatus httpStatus;
-    private final List<FieldError> fieldErrors;
+    private final List<RequestViolation> violations;
 
     public CommonException(String message) {
         super(message);
-        this.fieldErrors = new ArrayList<>();
+        this.violations = new ArrayList<>();
         this.httpStatus = BAD_REQUEST;
         this.errorCode = INVALID_REQUEST;
     }
@@ -30,20 +31,20 @@ public class CommonException extends RuntimeException {
         this(errorCode.getMessage(), httpStatus, errorCode);
     }
 
-    public CommonException(List<FieldError> fieldErrors, HttpStatus httpStatus, ErrorCode errorCode) {
-        this(errorCode.getMessage(), fieldErrors, httpStatus, errorCode);
+    public CommonException(List<RequestViolation> violations, HttpStatus httpStatus, ErrorCode errorCode) {
+        this(errorCode.getMessage(), violations, httpStatus, errorCode);
     }
 
     public CommonException(String message, HttpStatus httpStatus, ErrorCode errorCode) {
         super(message);
-        this.fieldErrors = new ArrayList<>();
+        this.violations = new ArrayList<>();
         this.httpStatus = httpStatus;
         this.errorCode = errorCode;
     }
 
-    public CommonException(String message, List<FieldError> fieldErrors, HttpStatus httpStatus, ErrorCode errorCode) {
+    public CommonException(String message, List<RequestViolation> violations, HttpStatus httpStatus, ErrorCode errorCode) {
         super(message);
-        this.fieldErrors = fieldErrors;
+        this.violations = violations;
         this.httpStatus = httpStatus;
         this.errorCode = errorCode;
     }

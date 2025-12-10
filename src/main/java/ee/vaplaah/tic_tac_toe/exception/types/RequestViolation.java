@@ -1,11 +1,13 @@
 package ee.vaplaah.tic_tac_toe.exception.types;
 
 import lombok.Builder;
+import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 
+@Getter
 @Builder
 @Jacksonized
-public class PayloadViolation {
-    private String path;
-    private String violation;
+public class RequestViolation {
+    private String field;
+    private String error;
 }

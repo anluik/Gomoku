@@ -36,7 +36,7 @@ public class SecurityConfiguration {
             .exceptionHandling(exceptionHandling -> exceptionHandling
                 // "entry point" into the process of challenging the client for credentials after AuthenticationException
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                // custom handler for AccessDeniedException
+                // handle AccessDeniedException when user is authenticated but not authorized
                 .accessDeniedHandler(accessDeniedHandler)
             )
             .addFilterAt(authenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)

@@ -1,7 +1,7 @@
 package ee.vaplaah.tic_tac_toe.session;
 
-import ee.vaplaah.tic_tac_toe.exception.types.PayloadViolation;
-import ee.vaplaah.tic_tac_toe.session.response.InvalidPayloadResponse;
+import ee.vaplaah.tic_tac_toe.exception.types.RequestViolation;
+import ee.vaplaah.tic_tac_toe.session.response.InvalidRequestResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static ee.vaplaah.tic_tac_toe.utils.JsonSerializer.JSON_SERIALIZER;
 
@@ -33,13 +33,13 @@ public class SessionMessageProcessor {
         try {
             message = JSON_SERIALIZER.readValue(textPayload, messageType);
         } catch (RuntimeException e) {
-            return sendGenericError(session, "Invalid message format or type mismatch.");
+            return sendGenericError(session, "Invalid message format or type mismatch");
         } catch (Exception e) {
-            return sendGenericError(session, "Internal parsing error.");
+            return sendGenericError(session, "Internal parsing error");
         }
 
         if (message == null) {
-            return sendGenericError(session, "Received empty or null message payload.");
+            return sendGenericError(session, "Received empty or null message payload");
         }
 
         Set<ConstraintViolation<T>> violations = validator.validate(message);
@@ -51,15 +51,15 @@ public class SessionMessageProcessor {
     }
 
     private <T> Mono<T> sendValidationErrors(WebSocketSession session, Set<ConstraintViolation<T>> violations) {
-        Set<PayloadViolation> mappedViolations = violations.stream()
-            .map(violation -> PayloadViolation.builder()
-                .path(violation.getPropertyPath().toString())
-                .violation(violation.getMessage())
+        List<RequestViolation> mappedViolations = violations.stream()
+            .map(violation -> RequestViolation.builder()
+                .field(violation.getPropertyPath().toString())
+                .error(violation.getMessage())
                 .build())
-            .collect(Collectors.toSet());
+            .toList();
 
-        InvalidPayloadResponse response = InvalidPayloadResponse.builder()
-            .message("Validation failed.")
+        InvalidRequestResponse response = InvalidRequestResponse.builder()
+            .message("Validation failed")
             .violations(mappedViolations)
             .build();
 
@@ -69,7 +69,7 @@ public class SessionMessageProcessor {
     }
 
     private <T> Mono<T> sendGenericError(WebSocketSession session, String message) {
-        InvalidPayloadResponse response = InvalidPayloadResponse.builder()
+        InvalidRequestResponse response = InvalidRequestResponse.builder()
             .message(message)
             .build();
 

@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.session.response;
 
-import ee.vaplaah.tic_tac_toe.enums.ResponseStatus;
+import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 

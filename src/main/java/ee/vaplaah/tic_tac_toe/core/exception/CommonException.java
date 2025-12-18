@@ -1,7 +1,7 @@
-package ee.vaplaah.tic_tac_toe.exception;
+package ee.vaplaah.tic_tac_toe.core.exception;
 
-import ee.vaplaah.tic_tac_toe.enums.ErrorCode;
-import ee.vaplaah.tic_tac_toe.exception.types.RequestViolation;
+import ee.vaplaah.tic_tac_toe.core.exception.enums.ErrorCode;
+import ee.vaplaah.tic_tac_toe.core.exception.types.RequestViolation;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.http.HttpStatus;
@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ee.vaplaah.tic_tac_toe.enums.ErrorCode.INVALID_REQUEST;
+import static ee.vaplaah.tic_tac_toe.core.exception.enums.ErrorCode.INVALID_REQUEST;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Getter

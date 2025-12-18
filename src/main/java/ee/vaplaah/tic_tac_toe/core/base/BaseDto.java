@@ -1,4 +1,4 @@
-package ee.vaplaah.tic_tac_toe.utils.base;
+package ee.vaplaah.tic_tac_toe.core.base;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

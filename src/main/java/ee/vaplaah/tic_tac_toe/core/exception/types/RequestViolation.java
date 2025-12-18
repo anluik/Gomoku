@@ -1,4 +1,4 @@
-package ee.vaplaah.tic_tac_toe.exception.types;
+package ee.vaplaah.tic_tac_toe.core.exception.types;
 
 import lombok.Builder;
 import lombok.Getter;

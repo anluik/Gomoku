@@ -1,6 +1,6 @@
-package ee.vaplaah.tic_tac_toe.exception.authentication;
+package ee.vaplaah.tic_tac_toe.core.exception.authentication;
 
-import static ee.vaplaah.tic_tac_toe.enums.ErrorCode.USERNAME_TAKEN;
+import static ee.vaplaah.tic_tac_toe.core.exception.enums.ErrorCode.USERNAME_TAKEN;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 public class UsernameTakenException extends BaseAuthenticationException {

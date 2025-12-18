@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.authentication.refresh_token;
 
-import ee.vaplaah.tic_tac_toe.exception.authentication.TokenExpiredException;
+import ee.vaplaah.tic_tac_toe.core.exception.authentication.TokenExpiredException;
 import ee.vaplaah.tic_tac_toe.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

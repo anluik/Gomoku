@@ -1,6 +1,6 @@
-package ee.vaplaah.tic_tac_toe.exception.authentication;
+package ee.vaplaah.tic_tac_toe.core.exception.authentication;
 
-import static ee.vaplaah.tic_tac_toe.enums.ErrorCode.INVALID_TOKEN;
+import static ee.vaplaah.tic_tac_toe.core.exception.enums.ErrorCode.INVALID_TOKEN;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 /**

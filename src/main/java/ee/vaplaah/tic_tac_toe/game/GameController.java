@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.game;
 
-import ee.vaplaah.tic_tac_toe.exception.ResourceNotFoundException;
+import ee.vaplaah.tic_tac_toe.core.exception.ResourceNotFoundException;
 import ee.vaplaah.tic_tac_toe.game.dto.GameDto;
 import ee.vaplaah.tic_tac_toe.game.request.CreateGameRequest;
 import jakarta.validation.Valid;

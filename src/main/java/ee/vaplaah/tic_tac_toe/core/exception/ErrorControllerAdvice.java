@@ -1,7 +1,6 @@
-package ee.vaplaah.tic_tac_toe.configuration;
+package ee.vaplaah.tic_tac_toe.core.exception;
 
-import ee.vaplaah.tic_tac_toe.exception.CommonException;
-import ee.vaplaah.tic_tac_toe.exception.types.RequestViolation;
+import ee.vaplaah.tic_tac_toe.core.exception.types.RequestViolation;
 import ee.vaplaah.tic_tac_toe.session.response.BaseResponse;
 import ee.vaplaah.tic_tac_toe.session.response.InvalidRequestResponse;
 import lombok.extern.slf4j.Slf4j;

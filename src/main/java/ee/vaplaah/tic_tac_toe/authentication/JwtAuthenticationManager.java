@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.authentication;
 
-import ee.vaplaah.tic_tac_toe.exception.authentication.InvalidTokenException;
+import ee.vaplaah.tic_tac_toe.core.exception.authentication.InvalidTokenException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;

@@ -1,11 +1,10 @@
 package ee.vaplaah.tic_tac_toe.user;
 
-import ee.vaplaah.tic_tac_toe.utils.base.BaseEntity;
+import ee.vaplaah.tic_tac_toe.core.base.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;

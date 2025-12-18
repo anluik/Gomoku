@@ -1,13 +1,12 @@
 package ee.vaplaah.tic_tac_toe.game.dto;
 
 import ee.vaplaah.tic_tac_toe.game.Game;
-import ee.vaplaah.tic_tac_toe.utils.base.BaseDto;
+import ee.vaplaah.tic_tac_toe.core.base.BaseDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
 

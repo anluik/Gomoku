@@ -1,4 +1,4 @@
-package ee.vaplaah.tic_tac_toe.enums;
+package ee.vaplaah.tic_tac_toe.core.exception.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

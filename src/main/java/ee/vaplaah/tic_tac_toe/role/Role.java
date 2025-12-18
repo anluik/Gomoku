@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.role;
 
-import ee.vaplaah.tic_tac_toe.utils.base.BaseEntity;
+import ee.vaplaah.tic_tac_toe.core.base.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

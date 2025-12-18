@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.session;
 
-import ee.vaplaah.tic_tac_toe.exception.types.RequestViolation;
+import ee.vaplaah.tic_tac_toe.core.exception.types.RequestViolation;
 import ee.vaplaah.tic_tac_toe.session.response.InvalidRequestResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;

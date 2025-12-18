@@ -1,6 +1,6 @@
-package ee.vaplaah.tic_tac_toe.exception.authentication;
+package ee.vaplaah.tic_tac_toe.core.exception.authentication;
 
-import ee.vaplaah.tic_tac_toe.enums.ErrorCode;
+import ee.vaplaah.tic_tac_toe.core.exception.enums.ErrorCode;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;

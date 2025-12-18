@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.authentication;
 
-import ee.vaplaah.tic_tac_toe.exception.authentication.InvalidCredentialsException;
+import ee.vaplaah.tic_tac_toe.core.exception.authentication.InvalidCredentialsException;
 import ee.vaplaah.tic_tac_toe.role.RoleRepository;
 import ee.vaplaah.tic_tac_toe.user.User;
 import ee.vaplaah.tic_tac_toe.user.UserRepository;

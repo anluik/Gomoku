@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.game;
 
-import ee.vaplaah.tic_tac_toe.utils.base.BaseEntity;
+import ee.vaplaah.tic_tac_toe.core.base.BaseEntity;
 import jakarta.annotation.Nullable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

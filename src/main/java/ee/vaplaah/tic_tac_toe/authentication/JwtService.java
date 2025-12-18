@@ -1,7 +1,7 @@
 package ee.vaplaah.tic_tac_toe.authentication;
 
-import ee.vaplaah.tic_tac_toe.exception.authentication.InvalidTokenException;
-import ee.vaplaah.tic_tac_toe.exception.authentication.TokenExpiredException;
+import ee.vaplaah.tic_tac_toe.core.exception.authentication.InvalidTokenException;
+import ee.vaplaah.tic_tac_toe.core.exception.authentication.TokenExpiredException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;

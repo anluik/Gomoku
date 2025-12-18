@@ -1,6 +1,6 @@
-package ee.vaplaah.tic_tac_toe.exception.authentication;
+package ee.vaplaah.tic_tac_toe.core.exception.authentication;
 
-import static ee.vaplaah.tic_tac_toe.enums.ErrorCode.TOKEN_EXPIRED;
+import static ee.vaplaah.tic_tac_toe.core.exception.enums.ErrorCode.TOKEN_EXPIRED;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 /**

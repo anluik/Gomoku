@@ -14,14 +14,14 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GameEventHandler implements WebSocketHandler {
+public class GameSessionHandler implements WebSocketHandler {
 
     private final SessionMessageProcessor messageProcessor;
 
     @NonNull
     @Override
     public Mono<Void> handle(@NonNull WebSocketSession session) {
-        log.info("[GameEventHandler] WebSocket connection established to game {}", session.getId()); // TODO: include user ID in the message
+        log.info("[GameSessionHandler] WebSocket connection established to game {}", session.getId()); // TODO: include user ID in the message
 
         return session.receive()
             .map(WebSocketMessage::getPayloadAsText)
@@ -31,7 +31,7 @@ public class GameEventHandler implements WebSocketHandler {
     }
 
     private void handleValidGameEvent(GameEvent event) {
-        log.info("[GameEventHandler] Received valid GameEvent message: {}", event);
+        log.info("[GameSessionHandler] Received valid GameEvent message: {}", event);
         // Your successful business logic here
     }
 }

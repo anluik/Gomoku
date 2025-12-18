@@ -1,4 +1,4 @@
-package ee.vaplaah.tic_tac_toe.enums;
+package ee.vaplaah.tic_tac_toe.game.session;
 
 public enum GameEventType {
     USER_JOINED,

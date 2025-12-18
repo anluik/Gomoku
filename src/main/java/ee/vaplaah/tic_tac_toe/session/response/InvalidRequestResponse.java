@@ -10,9 +10,9 @@ import lombok.extern.jackson.Jacksonized;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
 @Jacksonized
 @SuperBuilder
-@Getter
 public class InvalidRequestResponse extends BaseResponse {
 
     @Builder.Default

@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.session.message;
 
-import ee.vaplaah.tic_tac_toe.enums.GameEventType;
+import ee.vaplaah.tic_tac_toe.game.session.GameEventType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 

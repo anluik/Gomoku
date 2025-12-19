@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.ser.ZonedDateTimeSerializer;
+import ee.vaplaah.tic_tac_toe.core.exception.JsonSerializationException;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatterBuilder;
@@ -39,9 +40,9 @@ public enum JsonSerializer {
             return objectMapper.readValue(json, classType);
         } catch (Exception e) {
             if (e instanceof JsonMappingException jsonException) {
-                throw new RuntimeException("Unable to deserialize due to: " + jsonException.getPathReference());
+                throw new JsonSerializationException("Unable to deserialize due to: " + jsonException.getPathReference());
             }
-            throw new RuntimeException("Unable to deserialize JSON to ".concat(classType.getName()));
+            throw new JsonSerializationException("Unable to deserialize JSON to ".concat(classType.getName()));
         }
     }
 
@@ -53,7 +54,7 @@ public enum JsonSerializer {
             String jsonString = objectMapper.writeValueAsString(object);
             return jsonString.replace("\\u0000", "");
         } catch (Exception e) {
-            throw new RuntimeException("Unable to serialize object to JSON".concat(object.getClass().getName()));
+            throw new JsonSerializationException("Unable to serialize object to JSON".concat(object.getClass().getName()));
         }
     }
 
@@ -69,9 +70,9 @@ public enum JsonSerializer {
             return objectMapper.readValue(json, typeReference);
         } catch (Exception e) {
             if (e instanceof JsonMappingException jsonException) {
-                throw new RuntimeException("Unable to deserialize due to: " + jsonException.getPathReference());
+                throw new JsonSerializationException("Unable to deserialize due to: " + jsonException.getPathReference());
             }
-            throw new RuntimeException("Unable to deserialize JSON to ".concat(typeReference.getType().getTypeName()));
+            throw new JsonSerializationException("Unable to deserialize JSON to ".concat(typeReference.getType().getTypeName()));
         }
     }
 

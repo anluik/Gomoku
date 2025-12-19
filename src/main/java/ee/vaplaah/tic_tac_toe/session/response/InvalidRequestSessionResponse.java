@@ -13,7 +13,7 @@ import java.util.List;
 @Getter
 @Jacksonized
 @SuperBuilder
-public class InvalidRequestResponse extends BaseResponse {
+public class InvalidRequestSessionResponse extends BaseSessionResponse {
 
     @Builder.Default
     List<RequestViolation> violations = new ArrayList<>();

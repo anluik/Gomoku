@@ -3,10 +3,11 @@ package ee.vaplaah.tic_tac_toe.game;
 import ee.vaplaah.tic_tac_toe.core.exception.ResourceNotFoundException;
 import ee.vaplaah.tic_tac_toe.game.dto.GameDto;
 import ee.vaplaah.tic_tac_toe.game.request.CreateGameRequest;
+import ee.vaplaah.tic_tac_toe.user.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,16 +29,18 @@ public class GameController {
 
     @GetMapping("/{id}")
     public Mono<GameDto> findGame(@PathVariable String id) {
-        log.info("[GameController] Finding game by id: {}", id);
+        log.info("Finding game by id: {}", id);
         return gameService.findById(id)
             .switchIfEmpty(Mono.error(new ResourceNotFoundException("Game with id " + id + " not found")));
     }
 
     @PostMapping
     @ResponseStatus(CREATED)
-    @PreAuthorize("hasRole('USER')")
-    public Mono<GameDto> createGame(@Valid @RequestBody CreateGameRequest request) {
-        log.info("[GameController] Creating a game by id");
-        return gameService.createGame(request);
+    public Mono<GameDto> createGame(
+        @Valid @RequestBody CreateGameRequest request,
+        @AuthenticationPrincipal User user
+    ) {
+        log.info("Creating a game by id");
+        return gameService.createGame(request, user);
     }
 }

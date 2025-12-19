@@ -34,18 +34,18 @@ public class AuthenticationService {
     private Long accessTokenExpirationSeconds;
 
     public Mono<User> register(RegisterRequest request) {
-        log.info("[AuthenticationService] Register request: {}", request);
+        log.info("Register request: {}", request);
         return userRepository.findByUsername(request.getUsername())
             .flatMap(existingUser -> Mono.<User>error(new UsernameTakenException()))
             .switchIfEmpty(createNewUser(request));
     }
 
     public Mono<LoginResponse> login(LoginRequest request) {
-        log.info("[AuthenticationService] Login request: {}", request);
+        log.info("Login request: {}", request);
         return userDetailsService.findByUsername(request.getUsername())
             .cast(User.class)
             .flatMap(user -> {
-                log.info("[AuthenticationService] Found user by username: {}", request.getUsername());
+                log.info("Found user by username: {}", request.getUsername());
                 if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
                     String accessToken = jwtService.generateAccessToken(user);
                     return refreshTokenService.createRefreshToken(user)
@@ -57,7 +57,7 @@ public class AuthenticationService {
                                 .build()
                         );
                 } else {
-                    log.info("[AuthenticationService] Incorrect password provided for username: {}", request.getUsername());
+                    log.info("Incorrect password provided for username: {}", request.getUsername());
                     return Mono.error(InvalidCredentialsException::new);
                 }
             })
@@ -65,7 +65,7 @@ public class AuthenticationService {
     }
 
     public Mono<LoginResponse> refreshToken(String refreshTokenString) {
-        log.info("[AuthenticationService] Refreshing access token");
+        log.info("Refreshing access token");
         return refreshTokenService.findByToken(refreshTokenString)
             .flatMap(refreshTokenService::verifyExpiration) // 1. Verify token exists and is not expired
             .flatMap(token ->
@@ -94,7 +94,7 @@ public class AuthenticationService {
 
     public Mono<Void> logout() {
         return SecurityUtils.getUser().flatMap(user -> {
-            log.info("[AuthenticationService] Logging out user {}", user.getId());
+            log.info("Logging out user {}", user.getId());
             // TODO - implement blacklisting of access tokens?
             return refreshTokenService.findByUserId(user.getId())
                 .flatMap(refreshToken -> refreshTokenService.deleteByToken(refreshToken.getToken()))

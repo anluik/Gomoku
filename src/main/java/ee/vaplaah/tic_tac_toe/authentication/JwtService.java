@@ -36,7 +36,7 @@ class JwtService {
     // --- Token Generation ---
 
     public String generateAccessToken(UserDetails userDetails) {
-        log.info("[JwtService] Generating an access token for user {}", userDetails);
+        log.info("Generating an access token for user {}", userDetails);
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", userDetails.getAuthorities().stream()
             .map(a -> a.getAuthority().replace("ROLE_", "")).toList());
@@ -91,7 +91,7 @@ class JwtService {
     }
 
     public boolean validateAccessToken(String token, UserDetails userDetails) {
-        log.info("[JwtService] Validating token for user {}", userDetails);
+        log.info("Validating token for user {}", userDetails);
         final String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }

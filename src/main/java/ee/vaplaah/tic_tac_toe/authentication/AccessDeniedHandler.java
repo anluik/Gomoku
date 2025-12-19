@@ -25,7 +25,7 @@ public class AccessDeniedHandler implements ServerAccessDeniedHandler {
 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException ex) {
-        log.error("[AccessDeniedHandler] Caught authorization exception with message: {}", ex.getMessage());
+        log.error("Caught authorization exception with message: {}", ex.getMessage());
 
         exchange.getResponse().setStatusCode(FORBIDDEN);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);

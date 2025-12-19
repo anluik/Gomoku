@@ -8,7 +8,7 @@ import lombok.Getter;
 public class GameEvent {
 
     @NotNull(message = "Game ID not specified")
-    private Long gameId;
+    private String gameId;
 
     @NotNull(message = "Event type not specified")
     private GameEventType type;

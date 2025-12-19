@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BaseResponse {
+public class BaseSessionResponse {
 
     private ResponseStatus status;
     private String message;

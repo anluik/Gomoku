@@ -27,7 +27,7 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
      */
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
-        log.info("[JwtAuthenticationManager] Authenticating user {}", authentication.getName());
+        log.info("Authenticating user {}", authentication.getName());
         String authToken = authentication.getCredentials().toString();
 
         String username = jwtService.extractUsername(authToken);

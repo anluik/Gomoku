@@ -26,7 +26,7 @@ public class BearerTokenServerAuthenticationConverter implements ServerAuthentic
      */
     @Override
     public Mono<Authentication> convert(ServerWebExchange exchange) {
-        log.info("[BearerTokenServerAuthenticationConverter] Converting incoming request to an Authentication object");
+        log.info("Converting incoming request to an Authentication object");
         return Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst("Authorization"))
             .filter(header -> header.startsWith(BEARER_PREFIX))
             .flatMap(extractToken)

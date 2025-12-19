@@ -2,7 +2,7 @@ package ee.vaplaah.tic_tac_toe.game;
 
 import ee.vaplaah.tic_tac_toe.game.dto.GameDto;
 import ee.vaplaah.tic_tac_toe.game.request.CreateGameRequest;
-import ee.vaplaah.tic_tac_toe.utils.SecurityUtils;
+import ee.vaplaah.tic_tac_toe.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,20 +22,17 @@ public class GameService {
             .map(GameDto::from);
     }
 
-    public Mono<GameDto> createGame(CreateGameRequest request) {
-        log.info("[GameService] Creating new game");
-        return SecurityUtils.getUser()
-            .flatMap(user -> {
-                String creatorId = user.getId();
-                Integer boardSize = request.getBoardSize();
-                Game build = Game.builder()
-                    .boardSize(boardSize)
-                    .winningCount(request.getWinningCount())
-                    .board(new String[boardSize][boardSize])
-                    .players(List.of(creatorId))
-                    .build();
-                return gameRepository.save(build)
-                    .flatMap(game -> Mono.just(GameDto.from(game)));
-            });
+    public Mono<GameDto> createGame(CreateGameRequest request, User user) {
+        log.info("Creating new game");
+        String creatorId = user.getId();
+        Integer boardSize = request.getBoardSize();
+        Game build = Game.builder()
+            .boardSize(boardSize)
+            .winningCount(request.getWinningCount())
+            .board(new String[boardSize][boardSize])
+            .players(List.of(creatorId))
+            .build();
+        return gameRepository.save(build)
+            .flatMap(game -> Mono.just(GameDto.from(game)));
     }
 }

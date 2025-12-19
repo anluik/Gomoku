@@ -29,32 +29,32 @@ public class AuthenticationController {
 
     @GetMapping("/current")
     public Authentication current(Authentication authentication) {
-        log.info("[AuthenticationController] Receiving the authentication object");
+        log.info("Receiving the authentication object");
         return authentication;
     }
 
     @PostMapping("/register")
     @ResponseStatus(CREATED)
     public Mono<User> register(@Valid @RequestBody RegisterRequest request) {
-        log.info("[AuthenticationController] Received request to register user: {}", request);
+        log.info("Received request to register user: {}", request);
         return authenticationService.register(request);
     }
 
     @PostMapping("/login")
     public Mono<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("[AuthenticationController] Received request to login: {}", request);
+        log.info("Received request to login: {}", request);
         return authenticationService.login(request);
     }
 
     @PostMapping("/refresh")
     public Mono<LoginResponse> refresh(@Valid @RequestBody String refreshToken) {
-        log.info("[AuthenticationController] Received request to refresh authentication with token {}", refreshToken);
+        log.info("Received request to refresh authentication with token {}", refreshToken);
         return authenticationService.refreshToken(refreshToken);
     }
 
     @PostMapping("/logout")
     public Mono<ResponseEntity<Void>> logout() {
-        log.info("[AuthenticationController] Received request to logout");
+        log.info("Received request to logout");
         return authenticationService.logout()
             .then(Mono.just(ResponseEntity.noContent().build()));
     }

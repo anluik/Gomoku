@@ -1,7 +1,10 @@
 package ee.vaplaah.tic_tac_toe.session;
 
+import ee.vaplaah.tic_tac_toe.core.exception.JsonSerializationException;
+import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
 import ee.vaplaah.tic_tac_toe.core.exception.types.RequestViolation;
-import ee.vaplaah.tic_tac_toe.session.response.InvalidRequestResponse;
+import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
+import ee.vaplaah.tic_tac_toe.session.response.InvalidRequestSessionResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
@@ -32,9 +35,10 @@ public class SessionMessageProcessor {
 
         try {
             message = JSON_SERIALIZER.readValue(textPayload, messageType);
-        } catch (RuntimeException e) {
+        } catch (JsonSerializationException e) {
             return sendGenericError(session, "Invalid message format or type mismatch");
         } catch (Exception e) {
+            log.error("Unexpected error during message parsing", e);
             return sendGenericError(session, "Internal parsing error");
         }
 
@@ -58,19 +62,20 @@ public class SessionMessageProcessor {
                 .build())
             .toList();
 
-        InvalidRequestResponse response = InvalidRequestResponse.builder()
+        InvalidRequestSessionResponse response = InvalidRequestSessionResponse.builder()
             .message("Validation failed")
             .violations(mappedViolations)
             .build();
 
         String errorResponseJson = JSON_SERIALIZER.writeAsJson(response);
         return session.send(Mono.just(session.textMessage(errorResponseJson)))
-            .then(Mono.empty()); // Discard the element
+            .then(Mono.empty());
     }
 
     private <T> Mono<T> sendGenericError(WebSocketSession session, String message) {
-        InvalidRequestResponse response = InvalidRequestResponse.builder()
+        BaseSessionResponse response = BaseSessionResponse.builder()
             .message(message)
+            .status(ResponseStatus.ERROR)
             .build();
 
         String errorResponseJson = JSON_SERIALIZER.writeAsJson(response);

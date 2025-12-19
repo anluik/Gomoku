@@ -16,7 +16,7 @@ public class AdminController {
 
     @GetMapping("/secret")
     public String getSecretMessage() {
-        log.info("[AdminController] Accessing secret admin message");
+        log.info("Accessing secret admin message");
         return "pspspsps";
     }
 }

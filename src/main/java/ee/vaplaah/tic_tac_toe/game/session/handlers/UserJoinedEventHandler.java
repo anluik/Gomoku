@@ -27,6 +27,9 @@ public class UserJoinedEventHandler implements GameEventHandler {
         String gameId = event.getGameId();
         return repository.findById(gameId)
             .flatMap(game -> {
+                if (game.getPlayers().contains(user.getId())) {
+                    return Mono.empty();
+                }
                 // Check if game is full
                 if (game.getPlayers().size() >= MAX_PLAYERS) {
                     BaseSessionResponse<?> response = BaseSessionResponse.builder()

@@ -15,6 +15,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.socket.CloseStatus;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
@@ -40,6 +41,9 @@ public class GameSessionHandler implements WebSocketHandler {
     public Mono<Void> handle(@NonNull WebSocketSession session) {
         String gameId = UriComponentsBuilder.fromUri(session.getHandshakeInfo().getUri())
             .build().getQueryParams().getFirst("gameId");
+        if (gameId == null || gameId.isBlank()) {
+            return session.close(CloseStatus.BAD_DATA.withReason("Parameter 'gameId' is required"));
+        }
 
         return SecurityUtils.getUser().flatMap(user -> {
             log.info("WebSocket connection established. Session: {}, User: {}, Game: {}.",
@@ -78,7 +82,7 @@ public class GameSessionHandler implements WebSocketHandler {
     }
 
     private Mono<BaseSessionResponse<?>> handleValidGameEvent(GameEvent event, User user) {
-        log.info("Handling game event {} for user {}", event, user.getId());
+        log.info("Handling game event {} for user {}", event.getType(), user.getId());
         return gameEventHandlers.stream()
             .filter(handler -> handler.supports(event.getType()))
             .findFirst()

@@ -36,7 +36,6 @@ public class JwtSecurityContextRepository implements ServerSecurityContextReposi
      */
     @Override
     public Mono<SecurityContext> load(ServerWebExchange exchange) {
-        log.info("Loading SecurityContext for incoming request {}", exchange.getRequest().getURI());
         return converter.convert(exchange)
             .flatMap(this.authenticationManager::authenticate)
             .map(SecurityContextImpl::new);

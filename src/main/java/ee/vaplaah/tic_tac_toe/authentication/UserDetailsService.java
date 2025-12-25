@@ -25,12 +25,10 @@ public class UserDetailsService implements ReactiveUserDetailsService {
 
     @Override
     public Mono<UserDetails> findByUsername(String username) {
-        log.info("Loading UserDetails for username {}", username);
         return userRepository.findByUsername(username)
             .switchIfEmpty(Mono.error(InvalidCredentialsException::new))
             .flatMap(user -> {
                 List<String> userRoles = user.getRoles();
-                log.info("User '{}' has roles {}", username, userRoles);
                 return roleRepository.findAllByNameIn(userRoles)
                     .collectList()
                     .map(roles -> {

@@ -36,7 +36,6 @@ class JwtService {
     // --- Token Generation ---
 
     public String generateAccessToken(UserDetails userDetails) {
-        log.info("Generating an access token for user {}", userDetails);
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", userDetails.getAuthorities().stream()
             .map(a -> a.getAuthority().replace("ROLE_", "")).toList());
@@ -65,10 +64,10 @@ class JwtService {
                 .parseSignedClaims(token)
                 .getPayload();
         } catch (ExpiredJwtException ex) {
-            log.error("[JwtService] Token has expired");
+            log.error("Token has expired");
             throw new TokenExpiredException();
         } catch (Exception ex) {
-            log.error("[JwtService] Token is invalid");
+            log.error("Token is invalid");
             throw new InvalidTokenException();
         }
     }
@@ -91,7 +90,6 @@ class JwtService {
     }
 
     public boolean validateAccessToken(String token, UserDetails userDetails) {
-        log.info("Validating token for user {}", userDetails);
         final String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }

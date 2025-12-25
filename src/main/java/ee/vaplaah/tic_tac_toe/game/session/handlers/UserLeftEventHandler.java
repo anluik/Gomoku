@@ -1,6 +1,5 @@
 package ee.vaplaah.tic_tac_toe.game.session.handlers;
 
-import ee.vaplaah.tic_tac_toe.core.exception.SessionMessageProcessingException;
 import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
 import ee.vaplaah.tic_tac_toe.game.GameRepository;
 import ee.vaplaah.tic_tac_toe.game.session.GameEventType;
@@ -26,15 +25,10 @@ public class UserLeftEventHandler implements GameEventHandler {
         return repository.findById(gameId)
             .flatMap(game -> {
                 if (!game.getPlayers().contains(user.getId())) {
-                    BaseSessionResponse<?> response = BaseSessionResponse.builder()
-                        .status(ResponseStatus.ERROR)
-                        .responseEvent(SessionResponseEvent.INVALID_PAYLOAD)
-                        .message("Unable to leave game - user not in game")
-                        .build();
-                    return Mono.error(new SessionMessageProcessingException(response));
+                    return Mono.empty();
                 }
                 // TODO: check concurrency?
-                game.getPlayers().add(user.getId());
+                game.getPlayers().remove(user.getId());
                 return repository.save(game);
             })
             .flatMap(savedGame -> {

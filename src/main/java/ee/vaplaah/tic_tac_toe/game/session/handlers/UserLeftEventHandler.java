@@ -15,9 +15,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
-public class UserJoinedEventHandler implements GameEventHandler {
-
-    public static final int MAX_PLAYERS = 2;
+public class UserLeftEventHandler implements GameEventHandler {
 
     private final GameSessionManager gameSessionManager;
     private final GameRepository repository;
@@ -27,12 +25,11 @@ public class UserJoinedEventHandler implements GameEventHandler {
         String gameId = event.getGameId();
         return repository.findById(gameId)
             .flatMap(game -> {
-                // Check if game is full
-                if (game.getPlayers().size() >= MAX_PLAYERS) {
+                if (!game.getPlayers().contains(user.getId())) {
                     BaseSessionResponse<?> response = BaseSessionResponse.builder()
                         .status(ResponseStatus.ERROR)
-                        .responseEvent(SessionResponseEvent.GAME_FULL)
-                        .message("Unable to join game - maximum players reached")
+                        .responseEvent(SessionResponseEvent.INVALID_PAYLOAD)
+                        .message("Unable to leave game - user not in game")
                         .build();
                     return Mono.error(new SessionMessageProcessingException(response));
                 }
@@ -41,18 +38,19 @@ public class UserJoinedEventHandler implements GameEventHandler {
                 return repository.save(game);
             })
             .flatMap(savedGame -> {
-                var broadcastMessage = BaseSessionResponse.builder()
+                var broadcast = BaseSessionResponse.builder()
                     .status(ResponseStatus.SUCCESS)
-                    .responseEvent(SessionResponseEvent.USER_JOINED)
-                    .message("User " + user.getUsername() + " joined the game")
+                    .responseEvent(SessionResponseEvent.USER_LEFT)
+                    .message("User " + user.getUsername() + " left the game")
                     .data(savedGame)
-//                    .correlationId(event.getCorrelationId())
                     .build();
 
-                // Broadcast to all subscribers of this game
-                gameSessionManager.broadcast(gameId, broadcastMessage);
+                gameSessionManager.broadcast(event.getGameId(), broadcast);
 
-                // Empty direct response to websocket message. Update is communicated via broadcast.
+                if (savedGame.getPlayers().isEmpty()) {
+                    gameSessionManager.removeSink(event.getGameId());
+                }
+
                 return Mono.empty();
             })
             // TODO: game not found?
@@ -61,6 +59,6 @@ public class UserJoinedEventHandler implements GameEventHandler {
 
     @Override
     public boolean supports(GameEventType eventType) {
-        return eventType == GameEventType.USER_JOINED;
+        return eventType == GameEventType.USER_LEFT;
     }
 }

@@ -2,6 +2,7 @@ package ee.vaplaah.tic_tac_toe.session.handlers;
 
 import ee.vaplaah.tic_tac_toe.core.exception.SessionMessageProcessingException;
 import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
+import ee.vaplaah.tic_tac_toe.game.session.GameEventType;
 import ee.vaplaah.tic_tac_toe.game.session.GameSessionManager;
 import ee.vaplaah.tic_tac_toe.game.session.handlers.GameEventHandler;
 import ee.vaplaah.tic_tac_toe.session.SessionMessageProcessor;
@@ -51,7 +52,7 @@ public class GameSessionHandler implements WebSocketHandler {
                     // process and validate incoming message
                     messageProcessor.process(payload, GameEvent.class)
                         .flatMap(event -> handleValidGameEvent(event, user))
-                        // catch message processing error from messageProcessor
+                        // catch errors from processing or handling
                         .onErrorResume(SessionMessageProcessingException.class, e -> Mono.just(e.getResponse()))
                         // catch any unexpected error from processing or handlers
                         .onErrorResume(e -> Mono.just(BaseSessionResponse.builder()
@@ -68,7 +69,11 @@ public class GameSessionHandler implements WebSocketHandler {
                 Flux.merge(broadcasts, actions)
                     .map(JSON_SERIALIZER::writeAsJson)
                     .map(session::textMessage)
-            );
+            ).doFinally(signalType -> {
+                log.info("WebSocket connection terminated with signal {}. Session: {}, User: {}, Game: {}.",
+                    signalType, session.getId(), user.getId(), gameId);
+                handleValidGameEvent(new GameEvent(gameId, GameEventType.USER_LEFT), user).subscribe();
+            });
         });
     }
 

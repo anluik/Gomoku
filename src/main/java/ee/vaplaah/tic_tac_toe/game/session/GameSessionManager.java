@@ -25,4 +25,11 @@ public class GameSessionManager {
         return gameSinks.computeIfAbsent(gameId, id ->
             Sinks.many().multicast().directBestEffort());
     }
+
+    public void removeSink(String gameId) {
+        Sinks.Many<?> sink = gameSinks.remove(gameId);
+        if (sink != null) {
+            sink.tryEmitComplete();
+        }
+    }
 }

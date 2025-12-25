@@ -76,7 +76,7 @@ public class GameSessionHandler implements WebSocketHandler {
             ).doFinally(signalType -> {
                 log.info("WebSocket connection terminated with signal {}. Session: {}, User: {}, Game: {}.",
                     signalType, session.getId(), user.getId(), gameId);
-                handleValidGameEvent(new GameEvent(gameId, GameEventType.USER_LEFT), user).subscribe();
+                handleValidGameEvent(new GameEvent(gameId, GameEventType.LEAVE_GAME), user).subscribe();
             });
         });
     }

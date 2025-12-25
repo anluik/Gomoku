@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
-public class UserJoinedEventHandler implements GameEventHandler {
+public class JoinGameEventHandler implements GameEventHandler {
 
     public static final int MAX_PLAYERS = 2;
 
@@ -64,6 +64,6 @@ public class UserJoinedEventHandler implements GameEventHandler {
 
     @Override
     public boolean supports(GameEventType eventType) {
-        return eventType == GameEventType.USER_JOINED;
+        return eventType == GameEventType.JOIN_GAME;
     }
 }

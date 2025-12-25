@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 
 @Component
 @RequiredArgsConstructor
-public class UserLeftEventHandler implements GameEventHandler {
+public class LeaveGameEventHandler implements GameEventHandler {
 
     private final GameSessionManager gameSessionManager;
     private final GameRepository repository;
@@ -53,6 +53,6 @@ public class UserLeftEventHandler implements GameEventHandler {
 
     @Override
     public boolean supports(GameEventType eventType) {
-        return eventType == GameEventType.USER_LEFT;
+        return eventType == GameEventType.LEAVE_GAME;
     }
 }

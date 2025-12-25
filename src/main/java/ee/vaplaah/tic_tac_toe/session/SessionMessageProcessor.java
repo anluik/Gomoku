@@ -1,16 +1,16 @@
 package ee.vaplaah.tic_tac_toe.session;
 
 import ee.vaplaah.tic_tac_toe.core.exception.JsonSerializationException;
+import ee.vaplaah.tic_tac_toe.core.exception.SessionMessageProcessingException;
 import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
 import ee.vaplaah.tic_tac_toe.core.exception.types.RequestViolation;
 import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
-import ee.vaplaah.tic_tac_toe.session.response.InvalidRequestSessionResponse;
+import ee.vaplaah.tic_tac_toe.session.response.InvalidPayloadSessionResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -26,35 +26,39 @@ public class SessionMessageProcessor {
     private final Validator validator;
 
     /**
-     * Attempts to read and validate a message.
-     * If successful, returns Mono.just(T).
-     * If failed, sends an error response and returns Mono.empty().
+     * Processes and validates the incoming text payload into the specified message type.
+     * @param textPayload the incoming message as text.
+     * @param messageType the class type to deserialize the message into.
+     * @return Mono of the validated message type or error Mono with SessionMessageProcessingException.
+     * @param <T> The type of the message to process.
      */
-    public <T> Mono<T> process(WebSocketSession session, String textPayload, Class<T> messageType) {
-        T message;
-
+    public <T> Mono<T> process(String textPayload, Class<T> messageType) {
         try {
-            message = JSON_SERIALIZER.readValue(textPayload, messageType);
+            T message = JSON_SERIALIZER.readValue(textPayload, messageType);
+
+            if (message == null) {
+                BaseSessionResponse<?> response = createGenericErrorResponse("Empty payload");
+                return Mono.error(new SessionMessageProcessingException(response));
+            }
+
+            Set<ConstraintViolation<T>> violations = validator.validate(message);
+            if (!violations.isEmpty()) {
+                BaseSessionResponse<?> response = createValidationErrorResponse(violations);
+                return Mono.error(new SessionMessageProcessingException(response));
+            }
+
+            return Mono.just(message);
         } catch (JsonSerializationException e) {
-            return sendGenericError(session, "Invalid message format or type mismatch");
+            BaseSessionResponse<?> response = createGenericErrorResponse("Invalid message format or type mismatch");
+            return Mono.error(new SessionMessageProcessingException(response));
         } catch (Exception e) {
             log.error("Unexpected error during message parsing", e);
-            return sendGenericError(session, "Internal parsing error");
+            BaseSessionResponse<?> response = createGenericErrorResponse("Internal error");
+            return Mono.error(new SessionMessageProcessingException(response));
         }
-
-        if (message == null) {
-            return sendGenericError(session, "Received empty or null message payload");
-        }
-
-        Set<ConstraintViolation<T>> violations = validator.validate(message);
-        if (!violations.isEmpty()) {
-            return sendValidationErrors(session, violations);
-        }
-
-        return Mono.just(message);
     }
 
-    private <T> Mono<T> sendValidationErrors(WebSocketSession session, Set<ConstraintViolation<T>> violations) {
+    private <T> InvalidPayloadSessionResponse createValidationErrorResponse(Set<ConstraintViolation<T>> violations) {
         List<RequestViolation> mappedViolations = violations.stream()
             .map(violation -> RequestViolation.builder()
                 .field(violation.getPropertyPath().toString())
@@ -62,24 +66,16 @@ public class SessionMessageProcessor {
                 .build())
             .toList();
 
-        InvalidRequestSessionResponse response = InvalidRequestSessionResponse.builder()
+        return InvalidPayloadSessionResponse.builder()
             .message("Validation failed")
-            .violations(mappedViolations)
+            .data(mappedViolations)
             .build();
-
-        String errorResponseJson = JSON_SERIALIZER.writeAsJson(response);
-        return session.send(Mono.just(session.textMessage(errorResponseJson)))
-            .then(Mono.empty());
     }
 
-    private <T> Mono<T> sendGenericError(WebSocketSession session, String message) {
-        BaseSessionResponse response = BaseSessionResponse.builder()
+    private BaseSessionResponse<?> createGenericErrorResponse(String message) {
+        return BaseSessionResponse.builder()
             .message(message)
             .status(ResponseStatus.ERROR)
             .build();
-
-        String errorResponseJson = JSON_SERIALIZER.writeAsJson(response);
-        return session.send(Mono.just(session.textMessage(errorResponseJson)))
-            .then(Mono.empty());
     }
 }

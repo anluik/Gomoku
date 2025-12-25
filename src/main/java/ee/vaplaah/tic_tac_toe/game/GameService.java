@@ -23,7 +23,6 @@ public class GameService {
     }
 
     public Mono<GameDto> createGame(CreateGameRequest request, User user) {
-        log.info("Creating new game");
         String creatorId = user.getId();
         Integer boardSize = request.getBoardSize();
         Game build = Game.builder()

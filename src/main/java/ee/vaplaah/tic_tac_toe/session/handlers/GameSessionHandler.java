@@ -2,6 +2,7 @@ package ee.vaplaah.tic_tac_toe.session.handlers;
 
 import ee.vaplaah.tic_tac_toe.core.exception.SessionMessageProcessingException;
 import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
+import ee.vaplaah.tic_tac_toe.game.session.GameSessionManager;
 import ee.vaplaah.tic_tac_toe.game.session.handlers.GameEventHandler;
 import ee.vaplaah.tic_tac_toe.session.SessionMessageProcessor;
 import ee.vaplaah.tic_tac_toe.session.message.GameEvent;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
+import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -29,28 +32,40 @@ public class GameSessionHandler implements WebSocketHandler {
 
     private final SessionMessageProcessor messageProcessor;
     private final List<GameEventHandler> gameEventHandlers;
+    private final GameSessionManager gameSessionManager;
 
     @NonNull
     @Override
     public Mono<Void> handle(@NonNull WebSocketSession session) {
+        String gameId = UriComponentsBuilder.fromUri(session.getHandshakeInfo().getUri())
+            .build().getQueryParams().getFirst("gameId");
+
         return SecurityUtils.getUser().flatMap(user -> {
-            log.info("WebSocket connection established with session id {} with user {}", session.getId(), user.getId());
+            log.info("WebSocket connection established. Session: {}, User: {}, Game: {}.",
+                session.getId(), user.getId(), gameId);
+
+            // Action stream - messages from current user
+            Flux<BaseSessionResponse<?>> actions = session.receive()
+                .map(WebSocketMessage::getPayloadAsText)
+                .concatMap(payload ->
+                    // process and validate incoming message
+                    messageProcessor.process(payload, GameEvent.class)
+                        .flatMap(event -> handleValidGameEvent(event, user))
+                        // catch message processing error from messageProcessor
+                        .onErrorResume(SessionMessageProcessingException.class, e -> Mono.just(e.getResponse()))
+                        // catch any unexpected error from processing or handlers
+                        .onErrorResume(e -> Mono.just(BaseSessionResponse.builder()
+                            .responseEvent(SessionResponseEvent.UNEXPECTED_ERROR)
+                            .message("Unexpected Server Error")
+                            .status(ResponseStatus.ERROR)
+                            .build()))
+                );
+
+            // Broadcast stream - messages from other users in the same game
+            Flux<BaseSessionResponse<?>> broadcasts = gameSessionManager.getGameStream(gameId);
+
             return session.send(
-                session.receive()
-                    .map(WebSocketMessage::getPayloadAsText)
-                    .concatMap(payload ->
-                        // process and validate incoming message
-                        messageProcessor.process(payload, GameEvent.class)
-                            .flatMap(event -> handleValidGameEvent(event, user))
-                            // catch message processing error from messageProcessor
-                            .onErrorResume(SessionMessageProcessingException.class, e -> Mono.just(e.getResponse()))
-                            // catch any unexpected error from processing or handlers
-                            .onErrorResume(e -> Mono.just(BaseSessionResponse.builder()
-                                .responseEvent(SessionResponseEvent.UNEXPECTED_ERROR)
-                                .message("Unexpected Server Error")
-                                .status(ResponseStatus.ERROR)
-                                .build()))
-                    )
+                Flux.merge(broadcasts, actions)
                     .map(JSON_SERIALIZER::writeAsJson)
                     .map(session::textMessage)
             );

@@ -11,6 +11,7 @@ import ee.vaplaah.tic_tac_toe.session.response.SessionResponseEvent;
 import ee.vaplaah.tic_tac_toe.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -25,6 +26,7 @@ public class LeaveGameEventHandler implements GameEventHandler {
         return eventType == GameEventType.LEAVE_GAME;
     }
 
+    @Transactional
     @Override
     public Mono<BaseSessionResponse<?>> handle(GameEvent event, Game game, User user) {
         return removeUserFromTheGame(game, user.getId())
@@ -32,7 +34,7 @@ public class LeaveGameEventHandler implements GameEventHandler {
     }
 
     private Mono<Game> removeUserFromTheGame(Game game, String userId) {
-        game.getPlayers().remove(userId);
+        game.getPlayers().removeIf(player -> player.getUserId().equals(userId));
         if (game.getPlayers().isEmpty()) {
             // don't keep empty games - users should create a new one instead of rejoining old
             game.setOver(true);

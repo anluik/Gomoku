@@ -10,8 +10,10 @@ import ee.vaplaah.tic_tac_toe.session.message.GameEvent;
 import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
 import ee.vaplaah.tic_tac_toe.session.response.SessionResponseEvent;
 import ee.vaplaah.tic_tac_toe.user.User;
+import ee.vaplaah.tic_tac_toe.user.UserIdAndName;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -33,11 +35,12 @@ public class JoinGameEventHandler implements GameEventHandler {
         return false;
     }
 
+    @Transactional
     @Override
     public Mono<BaseSessionResponse<?>> handle(GameEvent event, Game game, User user) {
         String gameId = event.getGameId();
         return validateMaxPlayers(game)
-            .then(Mono.defer(() -> addUserToTheGame(game, user.getId())
+            .then(Mono.defer(() -> addUserToTheGame(game, user)
                 .flatMap(savedGame -> broadcastUserJoinedEvent(user, savedGame, gameId))));
     }
 
@@ -53,8 +56,8 @@ public class JoinGameEventHandler implements GameEventHandler {
         return Mono.empty();
     }
 
-    private Mono<Game> addUserToTheGame(Game game, String userId) {
-        game.getPlayers().add(userId);
+    private Mono<Game> addUserToTheGame(Game game, User user) {
+        game.getPlayers().add(UserIdAndName.fromUser(user));
         return gameRepository.save(game);
     }
 

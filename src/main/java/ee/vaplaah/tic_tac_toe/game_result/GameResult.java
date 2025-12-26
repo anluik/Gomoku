@@ -1,15 +1,16 @@
-package ee.vaplaah.tic_tac_toe.game;
+package ee.vaplaah.tic_tac_toe.game_result;
 
 import ee.vaplaah.tic_tac_toe.core.base.BaseEntity;
 import ee.vaplaah.tic_tac_toe.user.UserIdAndName;
-import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,17 +21,20 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class Game extends BaseEntity {
+public class GameResult extends BaseEntity {
 
-    private Integer boardSize; // number of cells in each director
-    private Integer winningCount; // how many pieces in a row to win
-    private String[][] board; // every value is a player's ID
-    // TODO: store moves?
-
+    @Indexed
+    private String gameId;
+    private ResultType resultType;
     @Builder.Default
-    private List<UserIdAndName> players = new ArrayList<>(); // players in the game
+    private List<UserIdAndName> players = new ArrayList<>();
     @Nullable
-    private String lastPlayer; // player who made the last move
+    private String winnerId; // null if draw
+    private int movesCount;
 
-    private boolean isOver; // has game ended
+    public enum ResultType {
+        WIN,
+        DRAW,
+        RESIGN,
+    }
 }

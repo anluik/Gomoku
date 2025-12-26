@@ -16,6 +16,11 @@ public class DatabaseConfiguration extends AbstractReactiveMongoConfiguration {
         return "tictactoe_db";
     }
 
+    @Override
+    public boolean autoIndexCreation() {
+        return true;
+    }
+
     @Bean
     public MongoClient mongoClient() {
         return MongoClients.create();

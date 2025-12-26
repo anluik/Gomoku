@@ -4,6 +4,7 @@ public enum SessionResponseEvent {
     // ======== success responses ========
     USER_JOINED,                                // user joined a session
     USER_LEFT,                                  // user left a session
+    USER_RESIGNED,                              // user resigned
 
     // ======== error responses ========
     GAME_FULL,                                  // when trying to join a full game

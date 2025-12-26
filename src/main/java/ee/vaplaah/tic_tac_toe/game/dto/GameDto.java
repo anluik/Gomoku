@@ -2,6 +2,7 @@ package ee.vaplaah.tic_tac_toe.game.dto;
 
 import ee.vaplaah.tic_tac_toe.game.Game;
 import ee.vaplaah.tic_tac_toe.core.base.BaseDto;
+import ee.vaplaah.tic_tac_toe.user.UserIdAndName;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,11 +22,10 @@ public class GameDto extends BaseDto {
     private String[][] board;
 
     @Builder.Default
-    private List<String> players = List.of();
+    private List<UserIdAndName> players = List.of();
     private String lastPlayer;
 
     private boolean isOver;
-    private int moves;
 
     public static GameDto from(Game game) {
         return GameDto.builder()
@@ -36,7 +36,6 @@ public class GameDto extends BaseDto {
             .players(game.getPlayers())
             .lastPlayer(game.getLastPlayer())
             .isOver(game.isOver())
-            .moves(game.getMoves())
             .createdAt(game.getCreatedAt())
             .createdBy(game.getCreatedBy())
             .updatedAt(game.getUpdatedAt())

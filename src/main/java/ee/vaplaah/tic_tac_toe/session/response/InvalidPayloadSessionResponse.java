@@ -27,4 +27,10 @@ public class InvalidPayloadSessionResponse extends BaseSessionResponse<List<Requ
     public List<RequestViolation> getData() {
         return data != null ? data : List.of();
     }
+
+    public static InvalidPayloadSessionResponse withMessage(String message) {
+        return InvalidPayloadSessionResponse.builder()
+                .message(message)
+                .build();
+    }
 }

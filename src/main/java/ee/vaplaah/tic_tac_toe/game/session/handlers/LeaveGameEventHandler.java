@@ -1,6 +1,7 @@
 package ee.vaplaah.tic_tac_toe.game.session.handlers;
 
 import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
+import ee.vaplaah.tic_tac_toe.game.Game;
 import ee.vaplaah.tic_tac_toe.game.GameRepository;
 import ee.vaplaah.tic_tac_toe.game.session.GameEventType;
 import ee.vaplaah.tic_tac_toe.game.session.GameSessionManager;
@@ -20,39 +21,40 @@ public class LeaveGameEventHandler implements GameEventHandler {
     private final GameRepository repository;
 
     @Override
-    public Mono<BaseSessionResponse<?>> handle(GameEvent event, User user) {
-        String gameId = event.getGameId();
-        return repository.findById(gameId)
-            .flatMap(game -> {
-                if (!game.getPlayers().contains(user.getId())) {
-                    return Mono.empty();
-                }
-                // TODO: check concurrency?
-                game.getPlayers().remove(user.getId());
-                return repository.save(game);
-            })
-            .flatMap(savedGame -> {
-                var broadcast = BaseSessionResponse.builder()
-                    .status(ResponseStatus.SUCCESS)
-                    .responseEvent(SessionResponseEvent.USER_LEFT)
-                    .message("User " + user.getUsername() + " left the game")
-                    .data(savedGame)
-                    .build();
-
-                gameSessionManager.broadcast(event.getGameId(), broadcast);
-
-                if (savedGame.getPlayers().isEmpty()) {
-                    gameSessionManager.removeSink(event.getGameId());
-                }
-
-                return Mono.empty();
-            })
-            // TODO: game not found?
-            ;
+    public boolean supports(GameEventType eventType) {
+        return eventType == GameEventType.LEAVE_GAME;
     }
 
     @Override
-    public boolean supports(GameEventType eventType) {
-        return eventType == GameEventType.LEAVE_GAME;
+    public Mono<BaseSessionResponse<?>> handle(GameEvent event, Game game, User user) {
+        return removeUserFromTheGame(game, user.getId())
+            .flatMap(savedGame -> broadcastUserLeftEvent(savedGame, user));
+    }
+
+    private Mono<Game> removeUserFromTheGame(Game game, String userId) {
+        game.getPlayers().remove(userId);
+        if (game.getPlayers().isEmpty()) {
+            // don't keep empty games - users should create a new one instead of rejoining old
+            game.setOver(true);
+        }
+        return repository.save(game);
+    }
+
+    private Mono<BaseSessionResponse<?>> broadcastUserLeftEvent(Game game, User user) {
+        var broadcast = BaseSessionResponse.builder()
+            .status(ResponseStatus.SUCCESS)
+            .responseEvent(SessionResponseEvent.USER_LEFT)
+            .message("User " + user.getUsername() + " left the game")
+            .data(game)
+            .build();
+
+        gameSessionManager.broadcast(game.getId(), broadcast);
+
+        if (game.getPlayers().isEmpty()) {
+            // remove sink as no one is listening anymore
+            gameSessionManager.removeSink(game.getId());
+        }
+
+        return Mono.empty();
     }
 }

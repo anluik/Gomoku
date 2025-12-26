@@ -2,12 +2,14 @@ package ee.vaplaah.tic_tac_toe.session.handlers;
 
 import ee.vaplaah.tic_tac_toe.core.exception.SessionMessageProcessingException;
 import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
+import ee.vaplaah.tic_tac_toe.game.GameRepository;
 import ee.vaplaah.tic_tac_toe.game.session.GameEventType;
 import ee.vaplaah.tic_tac_toe.game.session.GameSessionManager;
 import ee.vaplaah.tic_tac_toe.game.session.handlers.GameEventHandler;
 import ee.vaplaah.tic_tac_toe.session.SessionMessageProcessor;
 import ee.vaplaah.tic_tac_toe.session.message.GameEvent;
 import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
+import ee.vaplaah.tic_tac_toe.session.response.InvalidPayloadSessionResponse;
 import ee.vaplaah.tic_tac_toe.session.response.SessionResponseEvent;
 import ee.vaplaah.tic_tac_toe.user.User;
 import ee.vaplaah.tic_tac_toe.utils.SecurityUtils;
@@ -25,6 +27,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import static ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse.*;
 import static ee.vaplaah.tic_tac_toe.utils.JsonSerializer.JSON_SERIALIZER;
 
 @Slf4j
@@ -35,6 +38,7 @@ public class GameSessionHandler implements WebSocketHandler {
     private final SessionMessageProcessor messageProcessor;
     private final List<GameEventHandler> gameEventHandlers;
     private final GameSessionManager gameSessionManager;
+    private final GameRepository gameRepository;
 
     @NonNull
     @Override
@@ -80,20 +84,29 @@ public class GameSessionHandler implements WebSocketHandler {
             });
         });
     }
-
     private Mono<BaseSessionResponse<?>> handleValidGameEvent(GameEvent event, User user) {
         log.info("Handling game event {} for user {}", event.getType(), user.getId());
-        return gameEventHandlers.stream()
-            .filter(handler -> handler.supports(event.getType()))
+        GameEventHandler handler = gameEventHandlers.stream()
+            .filter(h -> h.supports(event.getType()))
             .findFirst()
-            .map(handler -> handler.handle(event, user))
-            .orElseGet(() -> {
-                BaseSessionResponse<?> baseSessionResponse = BaseSessionResponse.builder()
-                    .status(ResponseStatus.ERROR)
-                    .responseEvent(SessionResponseEvent.INVALID_PAYLOAD)
-                    .message("Unsupported event type: " + event.getType())
-                    .build();
-                return Mono.just(baseSessionResponse);
-            });
+            .orElse(null);
+
+        if (handler == null) {
+            InvalidPayloadSessionResponse response = InvalidPayloadSessionResponse
+                .withMessage("Unsupported event type: " + event.getType());
+            return Mono.error(new SessionMessageProcessingException(response));
+        }
+
+        return gameRepository.findById(event.getGameId())
+            .flatMap(game -> {
+                if (handler.requiresActiveGame() && game.isOver()) {
+                    return Mono.error(new SessionMessageProcessingException(ofGameAlreadyOver()));
+                }
+                if (handler.requiresParticipant() && !game.getPlayers().contains(user.getId())) {
+                    return Mono.error(new SessionMessageProcessingException(ofUserNotPartOfTheGame()));
+                }
+                return handler.handle(event, game, user);
+            })
+            .switchIfEmpty(Mono.error(new SessionMessageProcessingException(ofGameNotFound())));
     }
 }

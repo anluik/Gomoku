@@ -28,5 +28,6 @@ public class Game extends BaseEntity {
     private String lastPlayer; // player who made the last move
 
     private boolean isOver; // has game ended
+    private String winner; // player who won
     private int moves; // number of moves made
 }

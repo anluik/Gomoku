@@ -28,7 +28,6 @@ public class GameService {
         Game build = Game.builder()
             .boardSize(boardSize)
             .winningCount(request.getWinningCount())
-            .board(new String[boardSize][boardSize])
             .players(List.of(UserIdAndName.fromUser(user)))
             .build();
         return gameRepository.save(build)

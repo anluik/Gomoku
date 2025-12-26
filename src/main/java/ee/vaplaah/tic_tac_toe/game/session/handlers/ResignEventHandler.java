@@ -46,7 +46,7 @@ public class ResignEventHandler implements GameEventHandler {
             .winnerId(otherPlayer.getUserId())
             .players(game.getPlayers())
             .resultType(GameResult.ResultType.RESIGN)
-            .movesCount(0) // TODO: count moves after Game tracks moves
+            .movesCount(game.getMoves().size())
             .build();
         return gameResultRepository.save(result);
     }

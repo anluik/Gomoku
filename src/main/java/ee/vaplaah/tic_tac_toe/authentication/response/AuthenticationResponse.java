@@ -1,17 +1,20 @@
 package ee.vaplaah.tic_tac_toe.authentication.response;
 
+import ee.vaplaah.tic_tac_toe.user.dto.AuthenticatedUserDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.NonNull;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginResponse {
-
-    private String accessToken;
-    private String refreshToken;
+public class AuthenticationResponse {
+    private boolean authenticated;
+    @NonNull
     private Long expiresInSeconds;
+    @NonNull
+    private AuthenticatedUserDto user;
 }

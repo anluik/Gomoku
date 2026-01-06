@@ -1,5 +1,6 @@
 package ee.vaplaah.tic_tac_toe.authentication;
 
+import ee.vaplaah.tic_tac_toe.authentication.token.JwtAuthenticationToken;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
@@ -26,9 +27,12 @@ public class BearerTokenServerAuthenticationConverter implements ServerAuthentic
      */
     @Override
     public Mono<Authentication> convert(ServerWebExchange exchange) {
-        return Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst("Authorization"))
+        String requestPath = exchange.getRequest().getPath().value();
+        Mono<String> authToken = Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst("Authorization"))
             .filter(header -> header.startsWith(BEARER_PREFIX))
-            .flatMap(extractToken)
-            .map(JwtAuthenticationToken::new);
+            .flatMap(extractToken);
+        boolean isRefreshTokenRequest = "/api/auth/refresh".equals(requestPath);
+        return authToken
+            .map(token -> new JwtAuthenticationToken(token, !isRefreshTokenRequest));
     }
 }

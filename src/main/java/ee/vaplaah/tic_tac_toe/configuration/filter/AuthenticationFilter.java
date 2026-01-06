@@ -5,6 +5,8 @@ import ee.vaplaah.tic_tac_toe.authentication.AuthenticationFailureHandler;
 import ee.vaplaah.tic_tac_toe.authentication.JwtAuthenticationManager;
 import ee.vaplaah.tic_tac_toe.authentication.JwtSecurityContextRepository;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
+import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,5 +22,10 @@ public class AuthenticationFilter extends AuthenticationWebFilter {
         this.setServerAuthenticationConverter(converter); // acquires token from request
         this.setAuthenticationFailureHandler(failureHandler); // handles exceptions during authentication
         this.setSecurityContextRepository(securityContextRepository);  // loads SecurityContext from the request
+
+        // do not try to authenticate requests to PUBLIC_PATHS
+        NegatedServerWebExchangeMatcher matcher = new NegatedServerWebExchangeMatcher(
+            ServerWebExchangeMatchers.pathMatchers("/api/auth/register", "/api/auth/login"));
+        this.setRequiresAuthenticationMatcher(matcher);
     }
 }

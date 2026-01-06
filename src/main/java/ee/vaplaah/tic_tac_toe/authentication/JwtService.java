@@ -59,15 +59,13 @@ class JwtService {
     private Claims extractAllClaims(String token) {
         try {
             return Jwts.parser()
-                .verifyWith(getSigningKey()) // Verifies the signature
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
         } catch (ExpiredJwtException ex) {
-            log.error("Token has expired");
-            throw new TokenExpiredException();
+            throw new TokenExpiredException(ex.getClaims());
         } catch (Exception ex) {
-            log.error("Token is invalid");
             throw new InvalidTokenException();
         }
     }
@@ -85,12 +83,7 @@ class JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
-    }
-
-    public boolean validateAccessToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 }

@@ -1,4 +1,4 @@
-package ee.vaplaah.tic_tac_toe.authentication.refresh_token;
+package ee.vaplaah.tic_tac_toe.authentication.token.refresh_token;
 
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import reactor.core.publisher.Flux;

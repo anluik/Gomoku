@@ -1,4 +1,4 @@
-package ee.vaplaah.tic_tac_toe.authentication;
+package ee.vaplaah.tic_tac_toe.authentication.token;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,15 +14,17 @@ import java.util.Collection;
 public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 
     private final String token; // Holds the raw JWT string before authentication
-    private UserDetails principal;   // Holds the UserDetails object after authentication
+    private final UserDetails principal; // Holds the UserDetails object after authentication
+    private final boolean requiresNotExpired; // Indicates if the token must be not expired for the request
 
     /**
      * Constructor used when the token is first extracted from the request (unauthenticated).
      * @param token The raw JWT string.
      */
-    public JwtAuthenticationToken(String token) {
+    public JwtAuthenticationToken(String token, boolean requiresNotExpired) {
         super(null);
         this.token = token;
+        this.requiresNotExpired = requiresNotExpired;
         this.setAuthenticated(false);
         this.principal = null; // Principal is not set yet
     }
@@ -36,6 +38,7 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
         super(authorities);
         this.principal = principal;
         this.token = null; // Token is no longer needed after verification
+        this.requiresNotExpired = false; // Not relevant after authentication
         this.setAuthenticated(true);
     }
 
@@ -47,5 +50,9 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
     @Override
     public Object getPrincipal() {
         return principal; // The authenticated UserDetails
+    }
+
+    public boolean requiresNotExpired() {
+        return requiresNotExpired;
     }
 }

@@ -1,4 +1,4 @@
-package ee.vaplaah.tic_tac_toe.authentication.refresh_token;
+package ee.vaplaah.tic_tac_toe.authentication.token.refresh_token;
 
 import ee.vaplaah.tic_tac_toe.core.exception.authentication.TokenExpiredException;
 import ee.vaplaah.tic_tac_toe.user.User;

@@ -1,4 +1,4 @@
-package ee.vaplaah.tic_tac_toe.authentication.refresh_token;
+package ee.vaplaah.tic_tac_toe.authentication.token.refresh_token;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,10 +18,7 @@ public class RefreshToken {
 
     @Id
     private String id;
-
     private String token;
-
     private String userId;
-
     private Instant expiryDate;
 }

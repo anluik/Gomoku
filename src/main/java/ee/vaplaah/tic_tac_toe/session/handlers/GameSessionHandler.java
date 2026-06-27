@@ -100,7 +100,7 @@ public class GameSessionHandler implements WebSocketHandler {
             return Mono.error(new SessionMessageProcessingException(response));
         }
 
-        // TODO: caching layer for games?
+        // TODO: implement games cache
         return gameRepository.findById(event.getGameId())
             .flatMap(game -> {
                 if (handler.requiresActiveGame() && game.isOver()) {

@@ -65,11 +65,11 @@ public class AuthenticationService {
 
     public Mono<RefreshResponse> refreshToken(String refreshTokenString) {
         return refreshTokenService.findByToken(refreshTokenString)
-            .flatMap(refreshTokenService::verifyExpiration) // 1. Verify token exists and is not expired
+            .flatMap(refreshTokenService::verifyExpiration) // verify token exists and is not expired
             .flatMap(token ->
                 userRepository.findById(token.getUserId())
                     .flatMap(user -> {
-                        // delete the old Refresh Token (Ensures the old one can't be reused)
+                        // delete the old refresh token
                         return refreshTokenService.deleteByToken(token.getToken())
                             .then(Mono.just(user));
                     })
@@ -91,7 +91,7 @@ public class AuthenticationService {
 
     public Mono<Void> logout() {
         return SecurityUtils.getUser().flatMap(user -> {
-            // TODO - implement blacklisting of access tokens?
+            // TODO - implement blacklisting of access tokens
             return refreshTokenService.findByUserId(user.getId())
                 .flatMap(refreshToken -> refreshTokenService.deleteByToken(refreshToken.getToken()))
                 .then();

@@ -18,6 +18,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Low-level JWT utility service responsible for creating and parsing HMAC-SHA512 signed
+ * access tokens using the JJWT library. Intentionally package-private so that only
+ * {@link JwtAuthenticationManager} and {@link AuthenticationService} can call it directly.
+ */
 @Slf4j
 @Service
 class JwtService {

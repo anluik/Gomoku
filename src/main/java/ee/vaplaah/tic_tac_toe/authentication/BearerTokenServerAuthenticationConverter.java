@@ -1,6 +1,7 @@
 package ee.vaplaah.tic_tac_toe.authentication;
 
 import ee.vaplaah.tic_tac_toe.authentication.token.JwtAuthenticationToken;
+import ee.vaplaah.tic_tac_toe.configuration.filter.AuthenticationFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
@@ -11,8 +12,24 @@ import reactor.core.publisher.Mono;
 import java.util.function.Function;
 
 /**
- * Converts the HTTP request (specifically the Authorization header) into an Authentication object.
- * For example, this app uses JwtAuthenticationToken class to represent a JWT Authentication object.
+ * First stage of the JWT authentication pipeline: converts the HTTP request (specifically the Authorization header)
+ * into an Authentication object. This app uses {@link JwtAuthenticationToken} class to represent a JWT Authentication
+ * object.
+ *
+ * <p>Authentication filter requires a dedicated converter to extract credentials from the request before delegating
+ * to the authentication manager.
+ * </p>
+ *
+ * <p><strong>Lifecycle &amp; Flow Triggers:</strong> Called on every request that passes through
+ * {@link AuthenticationFilter} except those which have been excluded from authentication process.
+ * If the header is absent or not prefixed with {@code "Bearer "}, {@code Mono.empty()} is
+ * returned and the chain continues without authentication.
+ * </p>
+ *
+ * <p>For requests to {@code /api/auth/refresh}, the produced token is stamped with {@code requiresNotExpired = false}.
+ * This flag is read by {@link JwtAuthenticationManager} to skip the expiry check and allow an expired access JWT to
+ * be parsed — necessary so the client can prove identity when obtaining a new token pair.
+ * </p>
  */
 @Slf4j
 @Component

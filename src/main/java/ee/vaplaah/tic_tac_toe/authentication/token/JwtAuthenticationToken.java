@@ -7,9 +7,18 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 
 /**
- * Authentication object for JWT. Authentication object is held in the SecurityContext and
- * used as the currently authenticated user.
- * It holds the raw JWT string initially, and then the authenticated UserDetails.
+ * Dual-state credential carrier that flows through the entire JWT authentication pipeline,
+ * starting as an unauthenticated envelope holding a raw token string, and ending as a fully
+ * authenticated principal holding a {@link UserDetails} and its granted authorities.
+ *
+ * <p><strong>State summary:</strong>
+ * <ul>
+ *   <li><em>Pre-auth</em>: {@code token} = raw JWT string, {@code principal} = null,
+ *       {@code isAuthenticated() = false}.</li>
+ *   <li><em>Post-auth</em>: {@code token} = null, {@code principal} = loaded
+ *       {@code UserDetails}, {@code isAuthenticated() = true}.</li>
+ * </ul>
+ * </p>
  */
 public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 

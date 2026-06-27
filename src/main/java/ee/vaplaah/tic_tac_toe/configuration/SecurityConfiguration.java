@@ -15,6 +15,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
+/**
+ * Central assembly point for the Spring Security reactive filter chain: wires authorization
+ * rules, exception handlers, CORS policy, and the JWT authentication filter into a single
+ * coherent {@link SecurityWebFilterChain}.
+ */
 @Slf4j
 @Configuration
 @EnableWebFluxSecurity
@@ -38,7 +43,7 @@ public class SecurityConfiguration {
             .exceptionHandling(exceptionHandling -> exceptionHandling
                 // "entry point" into the process of challenging the client for credentials after AuthenticationException
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
-                // handle AccessDeniedException when user is authenticated but not authorized
+                // handle AccessDeniedException thrown when user is authenticated but not authorized
                 .accessDeniedHandler(accessDeniedHandler)
             )
             .addFilterAt(authenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)

@@ -6,13 +6,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 /**
- * Manages the actual authentication process for a JWT.
- * It verifies the token and loads the associated user details.
+ * Second stage of the JWT authentication pipeline: validates the raw JWT string received
+ * from {@link BearerTokenServerAuthenticationConverter}, loads the associated user from
+ * MongoDB, and returns a fully authenticated {@link JwtAuthenticationToken}.
+ *
+ * <p>This class is responsible for cryptographic validation (signature, expiry) and
+ * resolving the username to a live {@link UserDetails} object. Separating extraction
+ * from validation keeps each class focused on a single concern.
+ * </p>
  */
 @Slf4j
 @Component

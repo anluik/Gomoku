@@ -12,6 +12,11 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+/**
+ * Idempotent seed-data loader that ensures the minimum required reference data — the
+ * {@code USER} and {@code ADMIN} roles, and a default {@code admin} user — exist in MongoDB
+ * before the application begins serving traffic.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor

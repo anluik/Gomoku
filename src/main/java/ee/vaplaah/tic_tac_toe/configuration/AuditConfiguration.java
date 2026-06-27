@@ -1,5 +1,6 @@
 package ee.vaplaah.tic_tac_toe.configuration;
 
+import ee.vaplaah.tic_tac_toe.core.base.BaseEntity;
 import ee.vaplaah.tic_tac_toe.user.User;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,28 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
 
+/**
+ * Enables reactive MongoDB auditing and provides the two beans that Spring Data needs to
+ * automatically populate {@code @CreatedBy} / {@code @LastModifiedBy} and
+ * {@code @CreatedDate} / {@code @LastModifiedDate} fields on document saves.
+ *
+ * <p>Spring Data MongoDB's auditing infrastructure requires
+ * two provider beans: a {@link ReactiveAuditorAware} to resolve the current actor and a
+ * {@link DateTimeProvider} for timestamp normalization.
+ * Without this configuration class, audit fields would never be populated, silently producing
+ * {@code null} values. Using {@code @EnableReactiveMongoAuditing} here (rather than on the
+ * main application class) keeps auditing concerns grouped with other infrastructure config.
+ * </p>
+ *
+ * <p>{@code @EnableReactiveMongoAuditing} activates Spring Data's reactive auditing interceptor.
+ * The {@code auditor()} bean is invoked by Spring Data on every MongoDB save / update operation
+ * that targets a document extending {@link BaseEntity}.
+ * It reads the current principal from {@code ReactiveSecurityContextHolder}.
+ * If the context is empty (unauthenticated request) or the principal is not
+ * authenticated, the {@code filter(Authentication::isAuthenticated)} guard causes the
+ * {@code Mono} to complete empty, resulting in no auditor being set.
+ * </p>
+ */
 @Configuration
 @EnableReactiveMongoAuditing(dateTimeProviderRef = "utcDateTimeProvider")
 public class AuditConfiguration {

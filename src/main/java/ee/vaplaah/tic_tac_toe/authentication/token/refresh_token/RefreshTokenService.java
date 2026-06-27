@@ -12,6 +12,10 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Manages the full lifecycle of persisted refresh tokens: creation, lookup, expiry
+ * verification, and deletion (both targeted and user-scoped).
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

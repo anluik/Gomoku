@@ -1,5 +1,6 @@
 package ee.vaplaah.tic_tac_toe.authentication;
 
+import ee.vaplaah.tic_tac_toe.authentication.token.JwtAuthenticationToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
@@ -11,8 +12,25 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- * Loads the SecurityContext from the incoming request, using the JWT.
- * This effectively acts as the "JWT Filter" for WebFlux.
+ * <p>In a stateless JWT architecture running on WebFlux, there is no session —
+ * the security context must be reconstructed from scratch on every request. This class is
+ * exactly this: custom context loading from the exchange.
+ * </p>
+
+ *
+ * <p>Context construction process:
+ * <ul>
+ *   <li>{@link BearerTokenServerAuthenticationConverter} — called first in {@code load()} to
+ *       extract the Bearer token and produce a pre-auth {@link JwtAuthenticationToken}.</li>
+ *   <li>{@link ReactiveAuthenticationManager} ({@link JwtAuthenticationManager}) — called
+ *       second to validate the token and return the authenticated principal.</li>
+ *   <li>{@link org.springframework.security.core.context.SecurityContextImpl} — wraps the
+ *       authenticated token; the resulting {@code Mono<SecurityContext>} is consumed by the
+ *       framework to populate
+ *       {@link org.springframework.security.core.context.ReactiveSecurityContextHolder} for
+ *       downstream use in controllers and services.</li>
+ * </ul>
+ * </p>
  */
 @Slf4j
 @Component

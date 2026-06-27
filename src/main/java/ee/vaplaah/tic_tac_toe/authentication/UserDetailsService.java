@@ -15,6 +15,11 @@ import reactor.core.publisher.Mono;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Spring Security bridge that loads a fully hydrated {@link UserDetails}
+ * (including role-based {@link GrantedAuthority} objects)
+ * from MongoDB, given a username string extracted from a validated JWT.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

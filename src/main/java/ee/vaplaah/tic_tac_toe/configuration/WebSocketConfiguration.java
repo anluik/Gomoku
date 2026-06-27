@@ -6,17 +6,9 @@ import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter;
 
-import java.util.List;
 import java.util.Map;
 
-/**
- * The EnableWebSocketMessageBroker annotation sets up STOMP protocol and allows the server to
- * understand and process the STOMP messaging actions. It also configures a message broker which
- * is responsible for making sure that every message is forwarded to the correct place.
- * <br/><br/>
- * WebSocketMessageBrokerConfigurer enables to customize the settings that EnableWebSocketMessageBroker
- * configures by default.
- */
+
 @Configuration
 //@EnableWebSocketMessageBroker
 public class WebSocketConfiguration { // implements WebSocketMessageBrokerConfigurer {
@@ -51,7 +43,6 @@ public class WebSocketConfiguration { // implements WebSocketMessageBrokerConfig
 
     /**
      * Allows to link a URL to a specific session.
-     * @return
      */
     @Bean
     public SimpleUrlHandlerMapping handlerMapping(WebSocketHandler handler) {

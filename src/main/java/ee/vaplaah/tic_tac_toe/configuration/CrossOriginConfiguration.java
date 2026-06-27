@@ -9,6 +9,10 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Defines the application-wide CORS policy, restricting cross-origin access to the known
+ * frontend origin and explicitly enabling credential sharing.
+ */
 @Configuration
 public class CrossOriginConfiguration {
 

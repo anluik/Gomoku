@@ -24,6 +24,9 @@ import reactor.core.publisher.Mono;
 
 import static org.springframework.http.HttpStatus.CREATED;
 
+/**
+ * REST controller that exposes the public authentication endpoints under {@code /api/auth}.
+ */
 @Slf4j
 @RestController
 @RequiredArgsConstructor

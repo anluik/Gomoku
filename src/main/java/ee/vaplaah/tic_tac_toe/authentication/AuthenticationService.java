@@ -21,6 +21,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 
+/**
+ * Core authentication service that owns all identity lifecycle operations: user registration,
+ * credential-based login, access-token refresh, and logout.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

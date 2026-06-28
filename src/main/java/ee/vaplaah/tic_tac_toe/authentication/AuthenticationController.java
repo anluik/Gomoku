@@ -65,6 +65,7 @@ public class AuthenticationController {
     @ResponseStatus(CREATED)
     public Mono<User> register(@Valid @RequestBody RegisterRequest request) {
         log.info("Received request to register user: {}", request);
+        // TODO: return some DTO
         return authenticationService.register(request);
     }
 

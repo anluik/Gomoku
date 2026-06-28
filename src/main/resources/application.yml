@@ -13,5 +13,5 @@ server:
 
 jwt:
   secret: 11a60fc879d82fbf89062742e815f1b57ef3565fe7c2e01d4acff287254988cc395dec0968f5714da0578dd961d09109e2623aa2574ae349d056f023b67f57de
-  access-token-expiration-seconds: 900 # 15 minutes
+  access-token-expiration-seconds: 86400 # 15 minutes
   refresh-token-expiration-seconds: 86400 # 24 hours

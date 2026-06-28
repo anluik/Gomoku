@@ -43,9 +43,10 @@ public class JwtAuthenticationEntryPoint implements ServerAuthenticationEntryPoi
 
     @Override
     public Mono<Void> commence(ServerWebExchange exchange, AuthenticationException ex) {
-        log.error("Caught authentication exception with message: {}", ex.getMessage());
+        log.error("Caught authentication exception with type: {} and message: {}", ex.getClass(), ex.getMessage());
         String reason = "Authentication required";
 
+        // TODO: should send the error code too, or should UI just show the message
         if (ex instanceof BaseAuthenticationException baseEx) {
             reason = baseEx.getMessage();
             exchange.getResponse().setStatusCode(baseEx.getHttpStatus());

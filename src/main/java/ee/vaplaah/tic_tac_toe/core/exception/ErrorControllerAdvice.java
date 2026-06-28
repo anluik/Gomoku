@@ -5,6 +5,7 @@ import ee.vaplaah.tic_tac_toe.core.exception.types.ApiErrorResponse;
 import ee.vaplaah.tic_tac_toe.core.exception.types.ApiErrorResponse.ApiErrorResponseBuilder;
 import ee.vaplaah.tic_tac_toe.core.exception.types.RequestViolation;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,7 +31,8 @@ public class ErrorControllerAdvice {
             String detailsJson = JSON_SERIALIZER.writeAsJson(e.getDetails());
             response.details(detailsJson);
         }
-        return Mono.just(new ResponseEntity<>(response.build(), BAD_REQUEST));
+        HttpStatus httpStatus = e.getHttpStatus() == null ? BAD_REQUEST : e.getHttpStatus();
+        return Mono.just(new ResponseEntity<>(response.build(), httpStatus));
     }
 
     @ExceptionHandler(WebExchangeBindException.class)

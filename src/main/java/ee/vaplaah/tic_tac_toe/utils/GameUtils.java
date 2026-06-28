@@ -12,7 +12,7 @@ public class GameUtils {
         return players.get(0).getUserId().equals(currentUser) ? players.get(1) : players.get(0);
     }
 
-    public static boolean isUserPartOfTheGame(List<UserIdAndName> players, String userId) {
+    public static boolean isUserPartOfGame(List<UserIdAndName> players, String userId) {
         return players.stream()
             .anyMatch(player -> player.getUserId().equals(userId));
     }

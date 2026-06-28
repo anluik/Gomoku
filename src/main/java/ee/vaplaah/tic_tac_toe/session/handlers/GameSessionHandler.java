@@ -30,7 +30,7 @@ import java.util.List;
 import static ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse.ofGameAlreadyOver;
 import static ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse.ofGameNotFound;
 import static ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse.ofUserNotPartOfTheGame;
-import static ee.vaplaah.tic_tac_toe.utils.GameUtils.isUserPartOfTheGame;
+import static ee.vaplaah.tic_tac_toe.utils.GameUtils.isUserPartOfGame;
 import static ee.vaplaah.tic_tac_toe.utils.JsonSerializer.JSON_SERIALIZER;
 
 @Slf4j
@@ -103,10 +103,11 @@ public class GameSessionHandler implements WebSocketHandler {
         // TODO: implement games cache
         return gameRepository.findById(event.getGameId())
             .flatMap(game -> {
+                // TODO: what about if the game has started?
                 if (handler.requiresActiveGame() && game.isOver()) {
                     return Mono.error(new SessionMessageProcessingException(ofGameAlreadyOver()));
                 }
-                if (handler.requiresParticipant() && !isUserPartOfTheGame(game.getPlayers(), user.getId())) {
+                if (handler.requiresParticipant() && !isUserPartOfGame(game.getPlayers(), user.getId())) {
                     return Mono.error(new SessionMessageProcessingException(ofUserNotPartOfTheGame()));
                 }
                 return handler.handle(event, game, user);

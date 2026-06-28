@@ -11,6 +11,7 @@ public enum SessionResponseEvent {
     GAME_NOT_FOUND,                             // game does not exist
     GAME_ALREADY_OVER,                          // when trying to perform an action on a game that is already over
     USER_NOT_PART_OF_THE_GAME,                  // when a user tries to perform an action in a game they are not part of
+    USER_ALREADY_JOINED,                        // when a user tries join a game that they are already part of
     INVALID_PAYLOAD,                            // payload that conflicts with validation rules or system state
     UNEXPECTED_ERROR,                           // any error not covered by other enums
 }

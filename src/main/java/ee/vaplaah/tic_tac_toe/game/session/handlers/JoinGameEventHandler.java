@@ -1,5 +1,7 @@
 package ee.vaplaah.tic_tac_toe.game.session.handlers;
 
+import static ee.vaplaah.tic_tac_toe.utils.GameUtils.isUserPartOfGame;
+
 import ee.vaplaah.tic_tac_toe.core.exception.SessionMessageProcessingException;
 import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
 import ee.vaplaah.tic_tac_toe.game.Game;
@@ -39,9 +41,23 @@ public class JoinGameEventHandler implements GameEventHandler {
     @Override
     public Mono<BaseSessionResponse<?>> handle(GameEvent event, Game game, User user) {
         String gameId = event.getGameId();
-        return validateMaxPlayers(game)
+        return validateUserNotInGame(game, user)
+            .then(validateMaxPlayers(game))
             .then(Mono.defer(() -> addUserToTheGame(game, user)
                 .flatMap(savedGame -> broadcastUserJoinedEvent(user, savedGame, gameId))));
+    }
+
+    // TODO: is this needed? Just ignore the event and return success.
+    private Mono<BaseSessionResponse<?>> validateUserNotInGame(Game game, User user) {
+        if (isUserPartOfGame(game.getPlayers(), user.getId())) {
+            BaseSessionResponse<?> response = BaseSessionResponse.builder()
+                .status(ResponseStatus.ERROR)
+                .responseEvent(SessionResponseEvent.USER_ALREADY_JOINED)
+                .message("Unable to join game - user already in game")
+                .build();
+            return Mono.error(new SessionMessageProcessingException(response));
+        }
+        return Mono.empty();
     }
 
     private Mono<BaseSessionResponse<?>> validateMaxPlayers(Game game) {

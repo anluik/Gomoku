@@ -39,7 +39,7 @@ public class JoinGameEventHandler implements GameEventHandler {
     @Transactional
     @Override
     public Mono<SessionResponse<?>> handle(GameEvent event, Game game, User user) {
-        String gameId = event.getGameId();
+        String gameId = game.getId();
         return validateUserNotInGame(game, user)
             .then(validateMaxPlayers(game))
             .then(Mono.defer(() -> addUserToTheGame(game, user)

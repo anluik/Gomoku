@@ -61,7 +61,7 @@ public class GameSessionHandler implements WebSocketHandler {
                 .concatMap(payload ->
                     // process and validate incoming message
                     messageProcessor.process(payload, GameEvent.class)
-                        .flatMap(event -> handleValidGameEvent(event, user))
+                        .flatMap(event -> handleValidGameEvent(gameId, event, user))
                         // catch errors from processing or handling
                         .onErrorResume(SessionMessageProcessingException.class, e -> Mono.just(e.getResponse()))
                         // catch any unexpected error from processing or handlers
@@ -74,6 +74,7 @@ public class GameSessionHandler implements WebSocketHandler {
             // Broadcast stream - messages from other users in the same game
             Flux<SessionResponse<?>> broadcasts = gameSessionManager.getGameStream(gameId);
 
+            // TODO: should handle a JOIN_GAME event here? How would it work with spectator mode?
             return session.send(
                 Flux.merge(broadcasts, actions)
                     .map(JSON_SERIALIZER::writeAsJson)
@@ -81,12 +82,12 @@ public class GameSessionHandler implements WebSocketHandler {
             ).doFinally(signalType -> {
                 log.info("WebSocket connection terminated with signal {}. Session: {}, User: {}, Game: {}.",
                     signalType, session.getId(), user.getId(), gameId);
-                handleValidGameEvent(new GameEvent(gameId, GameEventType.LEAVE_GAME), user).subscribe();
+                handleValidGameEvent(gameId, new GameEvent(GameEventType.LEAVE_GAME), user).subscribe();
             });
         });
     }
 
-    private Mono<SessionResponse<?>> handleValidGameEvent(GameEvent event, User user) {
+    private Mono<SessionResponse<?>> handleValidGameEvent(String gameId, GameEvent event, User user) {
         log.info("Handling game event {} for user {}", event.getType(), user.getId());
         GameEventHandler handler = gameEventHandlers.stream()
             .filter(h -> h.supports(event.getType()))
@@ -95,11 +96,11 @@ public class GameSessionHandler implements WebSocketHandler {
 
         if (handler == null) {
             return Mono.error(new SessionMessageProcessingException(
-                GameResponses.unsupportedEvent(event.getGameId(), event.getType())));
+                GameResponses.unsupportedEvent(gameId, event.getType())));
         }
 
         // TODO: implement games cache
-        return gameRepository.findById(event.getGameId())
+        return gameRepository.findById(gameId)
             .flatMap(game -> {
                 // TODO: what about if the game has started?
                 if (handler.requiresActiveGame() && game.isOver()) {
@@ -112,7 +113,7 @@ public class GameSessionHandler implements WebSocketHandler {
                 return handler.handle(event, game, user);
             })
             .switchIfEmpty(Mono.error(new SessionMessageProcessingException(
-                GameResponses.gameNotFound(event.getGameId()))));
+                GameResponses.gameNotFound(gameId))));
     }
 
     private Mono<SessionResponse<?>> gameAlreadyOverError(String gameId) {

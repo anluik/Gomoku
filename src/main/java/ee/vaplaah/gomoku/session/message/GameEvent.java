@@ -11,9 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GameEvent {
 
-    @NotNull(message = "Game ID not specified")
-    private String gameId;
-
     @NotNull(message = "Event type not specified")
     private GameEventType type;
 }

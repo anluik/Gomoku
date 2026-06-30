@@ -1,0 +1,13 @@
+package ee.vaplaah.gomoku.core.exception.types;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
+
+@Getter
+@Builder
+@Jacksonized
+public class RequestViolation {
+    private String field;
+    private String error;
+}

@@ -1,0 +1,59 @@
+package ee.vaplaah.gomoku.configuration;
+
+import ee.vaplaah.gomoku.authentication.AccessDeniedHandler;
+import ee.vaplaah.gomoku.authentication.JwtAuthenticationEntryPoint;
+import ee.vaplaah.gomoku.configuration.filter.AuthenticationFilter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+
+/**
+ * Central assembly point for the Spring Security reactive filter chain: wires authorization
+ * rules, exception handlers, CORS policy, and the JWT authentication filter into a single
+ * coherent {@link SecurityWebFilterChain}.
+ */
+@Slf4j
+@Configuration
+@EnableWebFluxSecurity
+@RequiredArgsConstructor
+public class SecurityConfiguration {
+
+    private final AccessDeniedHandler accessDeniedHandler;
+    private final AuthenticationFilter authenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @Bean
+    public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity http) {
+        http
+            .csrf(ServerHttpSecurity.CsrfSpec::disable)
+            .cors(Customizer.withDefaults())
+            .authorizeExchange(auth -> auth
+                .pathMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                .pathMatchers("/api/admin/**").hasRole("ADMIN")
+                .pathMatchers("/api/v1/**").hasRole("USER")
+                .anyExchange().authenticated())
+            .exceptionHandling(exceptionHandling -> exceptionHandling
+                // "entry point" into the process of challenging the client for credentials after AuthenticationException
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                // handle AccessDeniedException thrown when user is authenticated but not authorized
+                .accessDeniedHandler(accessDeniedHandler)
+            )
+            .addFilterAt(authenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+            .formLogin(ServerHttpSecurity.FormLoginSpec::disable);
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
+    }
+}

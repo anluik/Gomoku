@@ -5,7 +5,7 @@ spring:
       password: admin
       host: localhost
       port: 27017
-      database: tictactoe_db
+      database: gomoku_db
       authentication-database: admin
 
 server:

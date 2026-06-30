@@ -1,0 +1,47 @@
+package ee.vaplaah.gomoku.game.dto;
+
+import ee.vaplaah.gomoku.game.Game;
+import ee.vaplaah.gomoku.core.base.BaseDto;
+import ee.vaplaah.gomoku.game.Move;
+import ee.vaplaah.gomoku.user.UserIdAndName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Getter
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class GameDto extends BaseDto {
+
+    private Integer boardSize;
+    private Integer winningCount;
+    @Builder.Default
+    private List<Move> moves = new ArrayList<>();
+    @Builder.Default
+    private List<UserIdAndName> players = List.of();
+    private String lastPlayer;
+
+    private boolean isOver;
+
+    public static GameDto from(Game game) {
+        return GameDto.builder()
+            .id(game.getId())
+            .boardSize(game.getBoardSize())
+            .winningCount(game.getWinningCount())
+            .moves(game.getMoves())
+            .players(game.getPlayers())
+            .lastPlayer(game.getLastPlayer())
+            .isOver(game.isOver())
+            .createdAt(game.getCreatedAt())
+            .createdBy(game.getCreatedBy())
+            .updatedAt(game.getUpdatedAt())
+            .updatedBy(game.getUpdatedBy())
+            .build();
+    }
+}

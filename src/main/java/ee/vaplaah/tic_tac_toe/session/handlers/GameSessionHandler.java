@@ -1,16 +1,17 @@
 package ee.vaplaah.tic_tac_toe.session.handlers;
 
 import ee.vaplaah.tic_tac_toe.core.exception.SessionMessageProcessingException;
-import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
 import ee.vaplaah.tic_tac_toe.game.GameRepository;
 import ee.vaplaah.tic_tac_toe.game.session.GameEventType;
 import ee.vaplaah.tic_tac_toe.game.session.GameSessionManager;
 import ee.vaplaah.tic_tac_toe.game.session.handlers.GameEventHandler;
+import ee.vaplaah.tic_tac_toe.game_result.GameResultRepository;
 import ee.vaplaah.tic_tac_toe.session.SessionMessageProcessor;
 import ee.vaplaah.tic_tac_toe.session.message.GameEvent;
-import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
-import ee.vaplaah.tic_tac_toe.session.response.InvalidPayloadSessionResponse;
-import ee.vaplaah.tic_tac_toe.session.response.SessionResponseEvent;
+import ee.vaplaah.tic_tac_toe.session.response.CommonResponses;
+import ee.vaplaah.tic_tac_toe.session.response.SessionResponse;
+import ee.vaplaah.tic_tac_toe.session.response.game.payload.GameOutcomeData;
+import ee.vaplaah.tic_tac_toe.session.response.game.GameResponses;
 import ee.vaplaah.tic_tac_toe.user.User;
 import ee.vaplaah.tic_tac_toe.utils.SecurityUtils;
 import lombok.NonNull;
@@ -27,9 +28,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import static ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse.ofGameAlreadyOver;
-import static ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse.ofGameNotFound;
-import static ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse.ofUserNotPartOfTheGame;
 import static ee.vaplaah.tic_tac_toe.utils.GameUtils.isUserPartOfGame;
 import static ee.vaplaah.tic_tac_toe.utils.JsonSerializer.JSON_SERIALIZER;
 
@@ -42,6 +40,7 @@ public class GameSessionHandler implements WebSocketHandler {
     private final List<GameEventHandler> gameEventHandlers;
     private final GameSessionManager gameSessionManager;
     private final GameRepository gameRepository;
+    private final GameResultRepository gameResultRepository;
 
     @NonNull
     @Override
@@ -57,7 +56,7 @@ public class GameSessionHandler implements WebSocketHandler {
                 session.getId(), user.getId(), gameId);
 
             // Action stream - messages from current user
-            Flux<BaseSessionResponse<?>> actions = session.receive()
+            Flux<SessionResponse<?>> actions = session.receive()
                 .map(WebSocketMessage::getPayloadAsText)
                 .concatMap(payload ->
                     // process and validate incoming message
@@ -66,15 +65,14 @@ public class GameSessionHandler implements WebSocketHandler {
                         // catch errors from processing or handling
                         .onErrorResume(SessionMessageProcessingException.class, e -> Mono.just(e.getResponse()))
                         // catch any unexpected error from processing or handlers
-                        .onErrorResume(e -> Mono.just(BaseSessionResponse.builder()
-                            .responseEvent(SessionResponseEvent.UNEXPECTED_ERROR)
-                            .message("Unexpected Server Error")
-                            .status(ResponseStatus.ERROR)
-                            .build()))
+                        .onErrorResume(e -> {
+                            log.error("Unexpected error occurred", e);
+                            return Mono.just(CommonResponses.unexpected());
+                        })
                 );
 
             // Broadcast stream - messages from other users in the same game
-            Flux<BaseSessionResponse<?>> broadcasts = gameSessionManager.getGameStream(gameId);
+            Flux<SessionResponse<?>> broadcasts = gameSessionManager.getGameStream(gameId);
 
             return session.send(
                 Flux.merge(broadcasts, actions)
@@ -87,7 +85,7 @@ public class GameSessionHandler implements WebSocketHandler {
             });
         });
     }
-    private Mono<BaseSessionResponse<?>> handleValidGameEvent(GameEvent event, User user) {
+    private Mono<SessionResponse<?>> handleValidGameEvent(GameEvent event, User user) {
         log.info("Handling game event {} for user {}", event.getType(), user.getId());
         GameEventHandler handler = gameEventHandlers.stream()
             .filter(h -> h.supports(event.getType()))
@@ -95,9 +93,8 @@ public class GameSessionHandler implements WebSocketHandler {
             .orElse(null);
 
         if (handler == null) {
-            InvalidPayloadSessionResponse response = InvalidPayloadSessionResponse
-                .withMessage("Unsupported event type: " + event.getType());
-            return Mono.error(new SessionMessageProcessingException(response));
+            return Mono.error(new SessionMessageProcessingException(
+                GameResponses.unsupportedEvent(event.getGameId(), event.getType())));
         }
 
         // TODO: implement games cache
@@ -105,13 +102,25 @@ public class GameSessionHandler implements WebSocketHandler {
             .flatMap(game -> {
                 // TODO: what about if the game has started?
                 if (handler.requiresActiveGame() && game.isOver()) {
-                    return Mono.error(new SessionMessageProcessingException(ofGameAlreadyOver()));
+                    return gameAlreadyOverError(game.getId());
                 }
                 if (handler.requiresParticipant() && !isUserPartOfGame(game.getPlayers(), user.getId())) {
-                    return Mono.error(new SessionMessageProcessingException(ofUserNotPartOfTheGame()));
+                    return Mono.error(new SessionMessageProcessingException(
+                        GameResponses.userNotPartOfTheGame(game.getId())));
                 }
                 return handler.handle(event, game, user);
             })
-            .switchIfEmpty(Mono.error(new SessionMessageProcessingException(ofGameNotFound())));
+            .switchIfEmpty(Mono.error(new SessionMessageProcessingException(
+                GameResponses.gameNotFound(event.getGameId()))));
+    }
+
+    private Mono<SessionResponse<?>> gameAlreadyOverError(String gameId) {
+        // The winner is not stored on Game, so look up the GameResult. A game can also be
+        // marked over with no result (e.g. all players left), hence the default outcome.
+        return gameResultRepository.findByGameId(gameId)
+            .map(result -> new GameOutcomeData(result.getWinnerId(), true))
+            .defaultIfEmpty(new GameOutcomeData(null, true))
+            .flatMap(outcome -> Mono.error(new SessionMessageProcessingException(
+                GameResponses.gameAlreadyOver(gameId, outcome))));
     }
 }

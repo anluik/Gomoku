@@ -1,14 +1,14 @@
 package ee.vaplaah.tic_tac_toe.game.session.handlers;
 
-import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
 import ee.vaplaah.tic_tac_toe.game.Game;
 import ee.vaplaah.tic_tac_toe.game.GameRepository;
 import ee.vaplaah.tic_tac_toe.game.session.GameEventType;
 import ee.vaplaah.tic_tac_toe.game.session.GameSessionManager;
 import ee.vaplaah.tic_tac_toe.session.message.GameEvent;
-import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
-import ee.vaplaah.tic_tac_toe.session.response.SessionResponseEvent;
+import ee.vaplaah.tic_tac_toe.session.response.SessionResponse;
+import ee.vaplaah.tic_tac_toe.session.response.game.GameResponses;
 import ee.vaplaah.tic_tac_toe.user.User;
+import ee.vaplaah.tic_tac_toe.user.UserIdAndName;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +28,7 @@ public class LeaveGameEventHandler implements GameEventHandler {
 
     @Transactional
     @Override
-    public Mono<BaseSessionResponse<?>> handle(GameEvent event, Game game, User user) {
+    public Mono<SessionResponse<?>> handle(GameEvent event, Game game, User user) {
         return removeUserFromTheGame(game, user.getId())
             .flatMap(savedGame -> broadcastUserLeftEvent(savedGame, user));
     }
@@ -42,13 +42,9 @@ public class LeaveGameEventHandler implements GameEventHandler {
         return repository.save(game);
     }
 
-    private Mono<BaseSessionResponse<?>> broadcastUserLeftEvent(Game game, User user) {
-        var broadcast = BaseSessionResponse.builder()
-            .status(ResponseStatus.SUCCESS)
-            .responseEvent(SessionResponseEvent.USER_LEFT)
-            .message("User " + user.getUsername() + " left the game")
-            .data(game)
-            .build();
+    private Mono<SessionResponse<?>> broadcastUserLeftEvent(Game game, User user) {
+        SessionResponse<?> broadcast = GameResponses.userLeft(
+            game.getId(), UserIdAndName.fromUser(user), game.getPlayers(), game.isOver());
 
         gameSessionManager.broadcast(game.getId(), broadcast);
 

@@ -3,14 +3,13 @@ package ee.vaplaah.tic_tac_toe.game.session.handlers;
 import static ee.vaplaah.tic_tac_toe.utils.GameUtils.isUserPartOfGame;
 
 import ee.vaplaah.tic_tac_toe.core.exception.SessionMessageProcessingException;
-import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
 import ee.vaplaah.tic_tac_toe.game.Game;
 import ee.vaplaah.tic_tac_toe.game.GameRepository;
 import ee.vaplaah.tic_tac_toe.game.session.GameEventType;
 import ee.vaplaah.tic_tac_toe.game.session.GameSessionManager;
 import ee.vaplaah.tic_tac_toe.session.message.GameEvent;
-import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
-import ee.vaplaah.tic_tac_toe.session.response.SessionResponseEvent;
+import ee.vaplaah.tic_tac_toe.session.response.SessionResponse;
+import ee.vaplaah.tic_tac_toe.session.response.game.GameResponses;
 import ee.vaplaah.tic_tac_toe.user.User;
 import ee.vaplaah.tic_tac_toe.user.UserIdAndName;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +38,7 @@ public class JoinGameEventHandler implements GameEventHandler {
 
     @Transactional
     @Override
-    public Mono<BaseSessionResponse<?>> handle(GameEvent event, Game game, User user) {
+    public Mono<SessionResponse<?>> handle(GameEvent event, Game game, User user) {
         String gameId = event.getGameId();
         return validateUserNotInGame(game, user)
             .then(validateMaxPlayers(game))
@@ -48,26 +47,18 @@ public class JoinGameEventHandler implements GameEventHandler {
     }
 
     // TODO: is this needed? Just ignore the event and return success.
-    private Mono<BaseSessionResponse<?>> validateUserNotInGame(Game game, User user) {
+    private Mono<SessionResponse<?>> validateUserNotInGame(Game game, User user) {
         if (isUserPartOfGame(game.getPlayers(), user.getId())) {
-            BaseSessionResponse<?> response = BaseSessionResponse.builder()
-                .status(ResponseStatus.ERROR)
-                .responseEvent(SessionResponseEvent.USER_ALREADY_JOINED)
-                .message("Unable to join game - user already in game")
-                .build();
-            return Mono.error(new SessionMessageProcessingException(response));
+            return Mono.error(new SessionMessageProcessingException(
+                GameResponses.userAlreadyJoined(game.getId(), game.getPlayers())));
         }
         return Mono.empty();
     }
 
-    private Mono<BaseSessionResponse<?>> validateMaxPlayers(Game game) {
+    private Mono<SessionResponse<?>> validateMaxPlayers(Game game) {
         if (game.getPlayers().size() >= MAX_PLAYERS) {
-            BaseSessionResponse<?> response = BaseSessionResponse.builder()
-                .status(ResponseStatus.ERROR)
-                .responseEvent(SessionResponseEvent.GAME_FULL)
-                .message("Unable to join game - maximum players reached")
-                .build();
-            return Mono.error(new SessionMessageProcessingException(response));
+            return Mono.error(new SessionMessageProcessingException(
+                GameResponses.gameFull(game.getId(), game.getPlayers())));
         }
         return Mono.empty();
     }
@@ -77,13 +68,9 @@ public class JoinGameEventHandler implements GameEventHandler {
         return gameRepository.save(game);
     }
 
-    private Mono<BaseSessionResponse<?>> broadcastUserJoinedEvent(User user, Game savedGame, String gameId) {
-        var broadcastMessage = BaseSessionResponse.builder()
-            .status(ResponseStatus.SUCCESS)
-            .responseEvent(SessionResponseEvent.USER_JOINED)
-            .message("User " + user.getUsername() + " joined the game")
-            .data(savedGame)
-            .build();
+    private Mono<SessionResponse<?>> broadcastUserJoinedEvent(User user, Game savedGame, String gameId) {
+        SessionResponse<?> broadcastMessage = GameResponses.userJoined(
+            gameId, UserIdAndName.fromUser(user), savedGame.getPlayers());
 
         // Broadcast to all subscribers of this game
         gameSessionManager.broadcast(gameId, broadcastMessage);

@@ -1,14 +1,14 @@
 package ee.vaplaah.tic_tac_toe.core.exception;
 
-import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
+import ee.vaplaah.tic_tac_toe.session.response.SessionResponse;
 import lombok.Getter;
 
 public class SessionMessageProcessingException extends RuntimeException {
 
     @Getter
-    private final BaseSessionResponse<?> response;
+    private final SessionResponse<?> response;
 
-    public SessionMessageProcessingException(BaseSessionResponse<?> response) {
+    public SessionMessageProcessingException(SessionResponse<?> response) {
         super(response.getMessage());
         this.response = response;
     }

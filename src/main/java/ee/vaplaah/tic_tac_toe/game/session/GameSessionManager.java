@@ -1,6 +1,6 @@
 package ee.vaplaah.tic_tac_toe.game.session;
 
-import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
+import ee.vaplaah.tic_tac_toe.session.response.SessionResponse;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
@@ -11,17 +11,17 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class GameSessionManager {
     // Map of game ID -> Sink
-    private final Map<String, Sinks.Many<BaseSessionResponse<?>>> gameSinks = new ConcurrentHashMap<>();
+    private final Map<String, Sinks.Many<SessionResponse<?>>> gameSinks = new ConcurrentHashMap<>();
 
-    public Flux<BaseSessionResponse<?>> getGameStream(String gameId) {
+    public Flux<SessionResponse<?>> getGameStream(String gameId) {
         return getOrCreateSink(gameId).asFlux();
     }
 
-    public void broadcast(String gameId, BaseSessionResponse<?> message) {
+    public void broadcast(String gameId, SessionResponse<?> message) {
         getOrCreateSink(gameId).tryEmitNext(message);
     }
 
-    private Sinks.Many<BaseSessionResponse<?>> getOrCreateSink(String gameId) {
+    private Sinks.Many<SessionResponse<?>> getOrCreateSink(String gameId) {
         return gameSinks.computeIfAbsent(gameId, id ->
             Sinks.many().multicast().directBestEffort());
     }

@@ -29,12 +29,20 @@ public class GameResult extends BaseEntity {
     @Builder.Default
     private List<UserIdAndName> players = new ArrayList<>();
     @Nullable
-    private String winnerId; // null if draw
+    private String winnerId; // null if draw or abort
     private int movesCount;
 
     public enum ResultType {
         WIN,
         DRAW,
         RESIGN,
+        /**
+         * Game is over without result.
+         * Examples:
+         * - Game started, but player didn't make their first move in time.
+         * - Player manually aborted the game before the first move.
+         * - Both players disconnected.
+         */
+        ABORT
     }
 }

@@ -2,10 +2,9 @@ package ee.vaplaah.tic_tac_toe.session;
 
 import ee.vaplaah.tic_tac_toe.core.exception.JsonSerializationException;
 import ee.vaplaah.tic_tac_toe.core.exception.SessionMessageProcessingException;
-import ee.vaplaah.tic_tac_toe.core.exception.enums.ResponseStatus;
 import ee.vaplaah.tic_tac_toe.core.exception.types.RequestViolation;
-import ee.vaplaah.tic_tac_toe.session.response.BaseSessionResponse;
-import ee.vaplaah.tic_tac_toe.session.response.InvalidPayloadSessionResponse;
+import ee.vaplaah.tic_tac_toe.session.response.CommonResponses;
+import ee.vaplaah.tic_tac_toe.session.response.SessionResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
@@ -37,28 +36,27 @@ public class SessionMessageProcessor {
             T message = JSON_SERIALIZER.readValue(textPayload, messageType);
 
             if (message == null) {
-                BaseSessionResponse<?> response = createGenericErrorResponse("Empty payload");
+                SessionResponse<?> response = createGenericErrorResponse("Empty payload");
                 return Mono.error(new SessionMessageProcessingException(response));
             }
 
             Set<ConstraintViolation<T>> violations = validator.validate(message);
             if (!violations.isEmpty()) {
-                BaseSessionResponse<?> response = createValidationErrorResponse(violations);
+                SessionResponse<?> response = createValidationErrorResponse(violations);
                 return Mono.error(new SessionMessageProcessingException(response));
             }
 
             return Mono.just(message);
         } catch (JsonSerializationException e) {
-            BaseSessionResponse<?> response = createGenericErrorResponse("Invalid message format or type mismatch");
+            SessionResponse<?> response = createGenericErrorResponse("Invalid message format or type mismatch");
             return Mono.error(new SessionMessageProcessingException(response));
         } catch (Exception e) {
             log.error("Unexpected error during message parsing", e);
-            BaseSessionResponse<?> response = createGenericErrorResponse("Internal error");
-            return Mono.error(new SessionMessageProcessingException(response));
+            return Mono.error(new SessionMessageProcessingException(CommonResponses.unexpected()));
         }
     }
 
-    private <T> InvalidPayloadSessionResponse createValidationErrorResponse(Set<ConstraintViolation<T>> violations) {
+    private <T> SessionResponse<?> createValidationErrorResponse(Set<ConstraintViolation<T>> violations) {
         List<RequestViolation> mappedViolations = violations.stream()
             .map(violation -> RequestViolation.builder()
                 .field(violation.getPropertyPath().toString())
@@ -66,16 +64,10 @@ public class SessionMessageProcessor {
                 .build())
             .toList();
 
-        return InvalidPayloadSessionResponse.builder()
-            .message("Validation failed")
-            .data(mappedViolations)
-            .build();
+        return CommonResponses.validationFailed(mappedViolations);
     }
 
-    private BaseSessionResponse<?> createGenericErrorResponse(String message) {
-        return BaseSessionResponse.builder()
-            .message(message)
-            .status(ResponseStatus.ERROR)
-            .build();
+    private SessionResponse<?> createGenericErrorResponse(String message) {
+        return CommonResponses.malformedPayload(message);
     }
 }

@@ -30,12 +30,17 @@ public class ResignEventHandler implements GameEventHandler {
         return eventType == GameEventType.RESIGN;
     }
 
+    @Override
+    public boolean retryOnConflict() {
+        return true;
+    }
+
     @Transactional
     @Override
     public Mono<SessionResponse<?>> handle(GameEvent event, Game game, User user) {
-        return saveGameResult(game, user.getId())
-            .flatMap(result -> completeGame(game))
-            .flatMap(savedGame -> broadcastUserResigned(savedGame, user));
+        return completeGame(game)
+            .flatMap(savedGame -> saveGameResult(savedGame, user.getId())
+                .then(broadcastUserResigned(savedGame, user)));
     }
 
     private Mono<GameResult> saveGameResult(Game game, String userId) {

@@ -26,6 +26,11 @@ public class LeaveGameEventHandler implements GameEventHandler {
         return eventType == GameEventType.LEAVE_GAME;
     }
 
+    @Override
+    public boolean retryOnConflict() {
+        return true;
+    }
+
     @Transactional
     @Override
     public Mono<SessionResponse<?>> handle(GameEvent event, Game game, User user) {

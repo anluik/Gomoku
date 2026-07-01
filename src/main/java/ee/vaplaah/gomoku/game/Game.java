@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
@@ -33,4 +34,7 @@ public class Game extends BaseEntity {
     private String lastPlayer; // player who made the last move
 
     private boolean isOver; // has game ended
+
+    @Version
+    private Long version;
 }

@@ -2,12 +2,12 @@ package ee.vaplaah.gomoku.session.handlers;
 
 import ee.vaplaah.gomoku.core.exception.SessionMessageProcessingException;
 import ee.vaplaah.gomoku.game.GameRepository;
-import ee.vaplaah.gomoku.game.session.GameEventType;
 import ee.vaplaah.gomoku.game.session.GameSessionManager;
 import ee.vaplaah.gomoku.game.session.handlers.GameEventHandler;
 import ee.vaplaah.gomoku.game_result.GameResultRepository;
 import ee.vaplaah.gomoku.session.SessionMessageProcessor;
 import ee.vaplaah.gomoku.session.message.GameEvent;
+import ee.vaplaah.gomoku.session.message.LeaveGameEvent;
 import ee.vaplaah.gomoku.session.response.CommonResponses;
 import ee.vaplaah.gomoku.session.response.SessionResponse;
 import ee.vaplaah.gomoku.session.response.game.payload.GameOutcomeData;
@@ -17,6 +17,7 @@ import ee.vaplaah.gomoku.utils.SecurityUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.CloseStatus;
 import org.springframework.web.reactive.socket.WebSocketHandler;
@@ -25,6 +26,7 @@ import org.springframework.web.reactive.socket.WebSocketSession;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 import java.util.List;
 
@@ -35,6 +37,8 @@ import static ee.vaplaah.gomoku.utils.JsonSerializer.JSON_SERIALIZER;
 @Component
 @RequiredArgsConstructor
 public class GameSessionHandler implements WebSocketHandler {
+
+    private static final long MAX_CONFLICT_RETRIES = 3;
 
     private final SessionMessageProcessor messageProcessor;
     private final List<GameEventHandler> gameEventHandlers;
@@ -74,7 +78,7 @@ public class GameSessionHandler implements WebSocketHandler {
             // Broadcast stream - messages from other users in the same game
             Flux<SessionResponse<?>> broadcasts = gameSessionManager.getGameStream(gameId);
 
-            // TODO: should handle a JOIN_GAME event here? How would it work with spectator mode?
+            // TODO: should handle a JOIN_GAME event here? How would it work with spectator mode? What if the game is over?
             return session.send(
                 Flux.merge(broadcasts, actions)
                     .map(JSON_SERIALIZER::writeAsJson)
@@ -82,7 +86,7 @@ public class GameSessionHandler implements WebSocketHandler {
             ).doFinally(signalType -> {
                 log.info("WebSocket connection terminated with signal {}. Session: {}, User: {}, Game: {}.",
                     signalType, session.getId(), user.getId(), gameId);
-                handleValidGameEvent(gameId, new GameEvent(GameEventType.LEAVE_GAME), user).subscribe();
+                handleValidGameEvent(gameId, new LeaveGameEvent(), user).subscribe();
             });
         });
     }
@@ -100,7 +104,7 @@ public class GameSessionHandler implements WebSocketHandler {
         }
 
         // TODO: implement games cache
-        return gameRepository.findById(gameId)
+        Mono<SessionResponse<?>> pipeline = gameRepository.findById(gameId)
             .flatMap(game -> {
                 // TODO: what about if the game has started?
                 if (handler.requiresActiveGame() && game.isOver()) {
@@ -114,6 +118,15 @@ public class GameSessionHandler implements WebSocketHandler {
             })
             .switchIfEmpty(Mono.error(new SessionMessageProcessingException(
                 GameResponses.gameNotFound(gameId))));
+
+        if (handler.retryOnConflict()) {
+            // A concurrent mutation of the same game bumps its @Version and makes this save fail.
+            pipeline = pipeline.retryWhen(Retry.max(MAX_CONFLICT_RETRIES)
+                .filter(OptimisticLockingFailureException.class::isInstance)
+                .onRetryExhaustedThrow((spec, signal) -> signal.failure()));
+        }
+
+        return pipeline;
     }
 
     private Mono<SessionResponse<?>> gameAlreadyOverError(String gameId) {

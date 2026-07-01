@@ -36,6 +36,11 @@ public class JoinGameEventHandler implements GameEventHandler {
         return false;
     }
 
+    @Override
+    public boolean retryOnConflict() {
+        return true;
+    }
+
     @Transactional
     @Override
     public Mono<SessionResponse<?>> handle(GameEvent event, Game game, User user) {
@@ -64,6 +69,7 @@ public class JoinGameEventHandler implements GameEventHandler {
     }
 
     private Mono<Game> addUserToTheGame(Game game, User user) {
+        // TODO: think about which color the user joined as
         game.getPlayers().add(UserIdAndName.fromUser(user));
         return gameRepository.save(game);
     }

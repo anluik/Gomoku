@@ -5,5 +5,7 @@ public enum GameEventType {
     LEAVE_GAME,
     RESIGN,
     START_GAME,
+    MOVE,
+    CHAT,
     ;
 }

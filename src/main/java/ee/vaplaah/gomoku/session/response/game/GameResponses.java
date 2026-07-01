@@ -3,7 +3,10 @@ package ee.vaplaah.gomoku.session.response.game;
 import ee.vaplaah.gomoku.game.session.GameEventType;
 import ee.vaplaah.gomoku.session.response.SessionResponse;
 import ee.vaplaah.gomoku.session.response.SessionResponseEvent;
+import ee.vaplaah.gomoku.game.Move;
+import ee.vaplaah.gomoku.session.response.game.payload.ChatData;
 import ee.vaplaah.gomoku.session.response.game.payload.GameOutcomeData;
+import ee.vaplaah.gomoku.session.response.game.payload.MoveData;
 import ee.vaplaah.gomoku.session.response.game.payload.UserJoinedData;
 import ee.vaplaah.gomoku.session.response.game.payload.UserLeftData;
 import ee.vaplaah.gomoku.session.response.game.payload.UserResignedData;
@@ -42,6 +45,29 @@ public class GameResponses {
                 "User " + player.getUsername() + " resigned")
             .gameId(gameId)
             .data(new UserResignedData(player, winnerId, over))
+            .build();
+    }
+
+    public SessionResponse<MoveData> moveMade(String gameId, Move move, int moveCount) {
+        return SessionResponse.<MoveData>success(SessionResponseEvent.MOVE_MADE,
+                "Move placed at (" + move.x() + ", " + move.y() + ")")
+            .gameId(gameId)
+            .data(new MoveData(move, moveCount))
+            .build();
+    }
+
+    public SessionResponse<GameOutcomeData> gameWon(String gameId, String winnerId) {
+        return SessionResponse.<GameOutcomeData>success(SessionResponseEvent.GAME_WON, "Game won")
+            .gameId(gameId)
+            .data(new GameOutcomeData(winnerId, true))
+            .build();
+    }
+
+    public SessionResponse<ChatData> chatMessage(String gameId, UserIdAndName sender, String text) {
+        return SessionResponse.<ChatData>success(SessionResponseEvent.CHAT_MESSAGE,
+                "Chat message from " + sender.getUsername())
+            .gameId(gameId)
+            .data(new ChatData(sender, text))
             .build();
     }
 
@@ -84,6 +110,24 @@ public class GameResponses {
 
     public SessionResponse<Void> unsupportedEvent(String gameId, GameEventType type) {
         return SessionResponse.<Void>error(SessionResponseEvent.UNSUPPORTED_EVENT, "Unsupported event type: " + type)
+            .gameId(gameId)
+            .build();
+    }
+
+    public SessionResponse<Void> gameNotReady(String gameId) {
+        return SessionResponse.<Void>error(SessionResponseEvent.GAME_NOT_READY, "Waiting for both players to join")
+            .gameId(gameId)
+            .build();
+    }
+
+    public SessionResponse<Void> notYourTurn(String gameId) {
+        return SessionResponse.<Void>error(SessionResponseEvent.NOT_YOUR_TURN, "It is not your turn")
+            .gameId(gameId)
+            .build();
+    }
+
+    public SessionResponse<Void> invalidMove(String gameId, String reason) {
+        return SessionResponse.<Void>error(SessionResponseEvent.INVALID_MOVE, reason)
             .gameId(gameId)
             .build();
     }

@@ -7,8 +7,8 @@ import ee.vaplaah.gomoku.game.Move;
 import ee.vaplaah.gomoku.session.response.game.payload.ChatData;
 import ee.vaplaah.gomoku.session.response.game.payload.GameOutcomeData;
 import ee.vaplaah.gomoku.session.response.game.payload.MoveData;
+import ee.vaplaah.gomoku.session.response.game.payload.PresenceData;
 import ee.vaplaah.gomoku.session.response.game.payload.UserJoinedData;
-import ee.vaplaah.gomoku.session.response.game.payload.UserLeftData;
 import ee.vaplaah.gomoku.session.response.game.payload.UserResignedData;
 import ee.vaplaah.gomoku.user.UserIdAndName;
 import lombok.experimental.UtilityClass;
@@ -32,11 +32,26 @@ public class GameResponses {
             .build();
     }
 
-    public SessionResponse<UserLeftData> userLeft(String gameId, UserIdAndName player, List<UserIdAndName> players, boolean over) {
-        return SessionResponse.<UserLeftData>success(SessionResponseEvent.USER_LEFT,
-                "User " + player.getUsername() + " left the game")
+    public SessionResponse<PresenceData> playerDisconnected(String gameId, UserIdAndName player, int graceSeconds) {
+        return SessionResponse.<PresenceData>success(SessionResponseEvent.PLAYER_DISCONNECTED,
+                "Player " + player.getUsername() + " disconnected")
             .gameId(gameId)
-            .data(new UserLeftData(player, players, over))
+            .data(new PresenceData(player, false, graceSeconds))
+            .build();
+    }
+
+    public SessionResponse<PresenceData> playerReconnected(String gameId, UserIdAndName player) {
+        return SessionResponse.<PresenceData>success(SessionResponseEvent.PLAYER_RECONNECTED,
+                "Player " + player.getUsername() + " reconnected")
+            .gameId(gameId)
+            .data(new PresenceData(player, true, null))
+            .build();
+    }
+
+    public SessionResponse<GameOutcomeData> gameAborted(String gameId) {
+        return SessionResponse.<GameOutcomeData>success(SessionResponseEvent.GAME_ABORTED, "Game aborted")
+            .gameId(gameId)
+            .data(new GameOutcomeData(null, true))
             .build();
     }
 

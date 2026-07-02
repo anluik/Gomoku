@@ -3,10 +3,12 @@ package ee.vaplaah.gomoku.session.response;
 public enum SessionResponseEvent {
     // ======== success responses ========
     USER_JOINED,                                // user joined a session
-    USER_LEFT,                                  // user left a session
     USER_RESIGNED,                              // user resigned
     MOVE_MADE,                                  // a player made a move
-    GAME_WON,                                   // a move ended the game with a winner
+    GAME_WON,                                   // a move (or abandonment) ended the game with a winner
+    GAME_ABORTED,                               // game ended with no winner (e.g. abandoned before any move)
+    PLAYER_DISCONNECTED,                        // a player's last connection dropped; forfeit timer started
+    PLAYER_RECONNECTED,                         // a disconnected player returned within the grace period
     CHAT_MESSAGE,                               // a chat message was sent to the game
 
     // ======== game errors ========

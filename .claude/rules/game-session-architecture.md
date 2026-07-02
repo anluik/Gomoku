@@ -21,19 +21,37 @@ document the rest.
 
 - **WebSocket entry:** `GameSessionHandler` (`session/handlers/`) handles one connection. It merges
   an **action stream** (this client's messages) and a **broadcast stream** (fan-out for the game),
-  and sends both back. On disconnect it auto-fires `LEAVE_GAME`.
+  and sends both back. On connect it registers presence + cancels any pending forfeit; on disconnect
+  it decrements presence and (if the game is active) arms a forfeit timer — it does **not** fire a
+  leave.
 - **Connection is authoritative for `gameId`.** The `?gameId=` query param is the single source of
   truth; it was **removed from the message payload** so a client can't act on another game. One
   socket = one game (also = spectating by default).
 - **Events are typed, polymorphic messages.** `GameEvent` is an abstract Jackson base keyed on
-  `type`; subclasses: `JoinGameEvent`, `LeaveGameEvent`, `ResignEvent`, `StartGameEvent`,
-  `MoveEvent(x,y,moveSeq)`, `ChatEvent(text)`. `SessionMessageProcessor` deserializes + bean-validates
-  the right subtype automatically.
+  `type`; subclasses: `JoinGameEvent`, `ResignEvent`, `StartGameEvent`, `MoveEvent(x,y,moveSeq)`,
+  `ChatEvent(text)`. `SessionMessageProcessor` deserializes + bean-validates the right subtype
+  automatically. (There is **no `LEAVE_GAME` event** — see disconnect handling below.)
+- **Membership vs presence.** `Game.players` is *durable* membership (set on JOIN, survives a
+  disconnect — nobody can take your seat). Live connections are *ephemeral* presence, ref-counted
+  per `(gameId, userId)` in `GamePresenceTracker` (in-memory) so multi-tab / refresh doesn't look
+  like a leave.
+- **Disconnect = abandonment, not leave.** A transport close never mutates `players`. When a
+  player's **last** connection drops during an active game (`players.size()==2 && !isOver`),
+  `AbandonmentService` broadcasts `PLAYER_DISCONNECTED` and arms a `Mono.delay(grace)` forfeit timer
+  (`game.abandonment.grace-seconds`, default 30). Reconnect cancels it and broadcasts
+  `PLAYER_RECONNECTED`. On expiry (still absent) the outcome depends on whether **both players have
+  made at least one move**: until both have moved the game **aborts** (`GameResult(ABORT)`, no
+  winner — it never really started); once both have moved the opponent **wins**
+  (`GameResult(WIN)`); if the opponent is also absent it aborts. Guard-save-first with the same
+  optimistic retry. Timers are in-memory/single-server. To concede a game that is underway a player
+  sends `RESIGN`; before their first move it is instead an abort (a manual `ABORT` event is not yet
+  implemented — see backlog).
 - **Handlers auto-discovered.** Each event has a `@Component` implementing `GameEventHandler` with
   opt-in default methods: `requiresActiveGame()`, `requiresParticipant()`, `retryOnConflict()`.
 - **Concurrency = optimistic locking + retry.** `@Version` on `Game`; `GameSessionHandler` wraps the
   `findById → checks → handle` chain in a bounded retry (max 3) on `OptimisticLockingFailureException`
-  when `handler.retryOnConflict()` is true. JOIN/MOVE/LEAVE/RESIGN opt in; CHAT/spectate do not.
+  when `handler.retryOnConflict()` is true. JOIN/MOVE/RESIGN opt in; CHAT/spectate do not. The
+  `AbandonmentService` forfeit path uses the same retry independently.
 - **Guard-save-first principle (mandatory for retryable handlers):** perform the version-guarded
   `Game.save` *before* any non-idempotent side effect (inserting a `GameResult`, broadcasting), so a
   retry can't double-apply. `ResignEventHandler` was reordered for this.
@@ -84,17 +102,27 @@ Reachable behind today's seams without changing handler logic:
       guessing its `gameId` (no participant gate on the subscription). Decide spectator policy.
 - [ ] **Sink lifecycle:** `GameSessionManager.removeSink()` calls `tryEmitComplete()`, which completes
       the shared broadcast for *all* subscribers (can disconnect survivors); sinks are also never
-      cleaned in some paths.
+      cleaned in some paths. *Partially mitigated:* `GameSessionHandler` now only calls `removeSink`
+      when `GamePresenceTracker.isGameEmpty(gameId)` (no survivors to disconnect). The general
+      `removeSink` contract is still footgun-y if called elsewhere.
 - [ ] **Reconnect/state resync:** the `directBestEffort` sink drops to absent subscribers and has no
       replay; a client reconnecting mid-game isn't re-synced. Fix: send a game-state snapshot on
       connect.
-- [ ] **Disconnect auto-LEAVE** fires for connections that never joined and swallows errors
-      (`.subscribe()` with no handler).
+- [x] **Disconnect auto-LEAVE** — DONE. Transport close no longer fires `LEAVE_GAME` (event removed
+      entirely). Disconnect now goes through `GamePresenceTracker` + `AbandonmentService` (see
+      "Disconnect = abandonment" above); the disconnect subscribe has a real error handler. Known
+      residual: forfeit timers/presence are in-memory (single-server); a restart mid-grace strands
+      the game, and pre-start games left by a sole player linger in Mongo (no auto-cleanup).
 
 ### Features
 - [ ] `START_GAME`: the enum value exists but has **no handler** (routes to `unsupportedEvent`).
 - [ ] Explicit `SPECTATE` presence event (currently implicit: connecting = read-only spectator).
-- [ ] Draw detection (board full, no winner) and any move-timeout / abort rules.
+- [ ] **Manual `ABORT` event:** let a player *explicitly* abort a game they haven't yet moved in
+      (chess.com-style: abort is available until you make your first move, resign afterwards). The
+      abandonment path already treats "not both moved" as an abort; this is the deliberate,
+      immediate counterpart. New `GameEventType.ABORT` + handler; reject (require `RESIGN`) once the
+      player has moved.
+- [ ] Draw detection (board full, no winner) and any move-timeout rules.
 
 ### Testing
 - [ ] No WebSocket integration tests yet. Priorities: turn enforcement, concurrent-join →
@@ -103,6 +131,9 @@ Reachable behind today's seams without changing handler logic:
 ## Guardrails when extending this layer
 
 - Keep the **connection `gameId` authoritative**; never trust a game id from a message payload.
+- **A transport disconnect is not a leave.** Never remove a player from `players` on socket close —
+  membership is durable; a drop only arms the `AbandonmentService` forfeit timer. Keep presence
+  (ephemeral) and membership (durable) separate.
 - Any new state-mutating handler that sets `retryOnConflict()=true` **must** follow
   **guard-save-first** (version-guarded `Game.save` before side effects), or retries will double-fire.
 - Keep fan-out behind `GameSessionManager` — don't let handlers talk to a transport directly.

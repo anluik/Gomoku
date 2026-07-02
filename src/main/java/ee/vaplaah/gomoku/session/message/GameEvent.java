@@ -16,7 +16,6 @@ import lombok.Getter;
 @JsonTypeInfo(use = Id.NAME, include = As.EXISTING_PROPERTY, property = "type", visible = true)
 @JsonSubTypes({
     @Type(value = JoinGameEvent.class, name = "JOIN_GAME"),
-    @Type(value = LeaveGameEvent.class, name = "LEAVE_GAME"),
     @Type(value = ResignEvent.class, name = "RESIGN"),
     @Type(value = StartGameEvent.class, name = "START_GAME"),
     @Type(value = MoveEvent.class, name = "MOVE"),

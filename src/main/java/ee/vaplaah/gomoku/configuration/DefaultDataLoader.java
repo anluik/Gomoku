@@ -30,6 +30,8 @@ public class DefaultDataLoader implements CommandLineRunner {
         createRoleIfNotExists("USER");
         createRoleIfNotExists("ADMIN");
         createAdminIfNotExists();
+
+        createOtherAccountsRemoveLater();
     }
 
     private void createRoleIfNotExists(String roleName) {
@@ -51,6 +53,30 @@ public class DefaultDataLoader implements CommandLineRunner {
                     .password("$2a$12$0xqBcM.oEaAfyw8numeax.3Q3gqTsvq12wHD36iHoFq.5og9yz022")
                     .roles(List.of("ADMIN", "USER"))
                     .build();
+                return userRepository.save(user);
+            }))
+            .subscribe();
+    }
+
+    private void createOtherAccountsRemoveLater() {
+        userRepository.findByUsername("admin2")
+            .switchIfEmpty(Mono.defer(() -> {
+                User user = User.builder()
+                        .username("admin2")
+                        .password("$2a$12$0xqBcM.oEaAfyw8numeax.3Q3gqTsvq12wHD36iHoFq.5og9yz022")
+                        .roles(List.of("ADMIN", "USER"))
+                        .build();
+                return userRepository.save(user);
+            }))
+            .subscribe();
+
+        userRepository.findByUsername("admin3")
+            .switchIfEmpty(Mono.defer(() -> {
+                User user = User.builder()
+                        .username("admin3")
+                        .password("$2a$12$0xqBcM.oEaAfyw8numeax.3Q3gqTsvq12wHD36iHoFq.5og9yz022")
+                        .roles(List.of("ADMIN", "USER"))
+                        .build();
                 return userRepository.save(user);
             }))
             .subscribe();

@@ -2,12 +2,13 @@ package ee.vaplaah.gomoku.session.handlers;
 
 import ee.vaplaah.gomoku.core.exception.SessionMessageProcessingException;
 import ee.vaplaah.gomoku.game.GameRepository;
+import ee.vaplaah.gomoku.game.session.AbandonmentService;
+import ee.vaplaah.gomoku.game.session.GamePresenceTracker;
 import ee.vaplaah.gomoku.game.session.GameSessionManager;
 import ee.vaplaah.gomoku.game.session.handlers.GameEventHandler;
 import ee.vaplaah.gomoku.game_result.GameResultRepository;
 import ee.vaplaah.gomoku.session.SessionMessageProcessor;
 import ee.vaplaah.gomoku.session.message.GameEvent;
-import ee.vaplaah.gomoku.session.message.LeaveGameEvent;
 import ee.vaplaah.gomoku.session.response.CommonResponses;
 import ee.vaplaah.gomoku.session.response.SessionResponse;
 import ee.vaplaah.gomoku.session.response.game.payload.GameOutcomeData;
@@ -45,6 +46,8 @@ public class GameSessionHandler implements WebSocketHandler {
     private final GameSessionManager gameSessionManager;
     private final GameRepository gameRepository;
     private final GameResultRepository gameResultRepository;
+    private final GamePresenceTracker presenceTracker;
+    private final AbandonmentService abandonmentService;
 
     @NonNull
     @Override
@@ -55,9 +58,14 @@ public class GameSessionHandler implements WebSocketHandler {
             return session.close(CloseStatus.BAD_DATA.withReason("Parameter 'gameId' is required"));
         }
 
+        // TODO: game does not exist?
         return SecurityUtils.getUser().flatMap(user -> {
             log.info("WebSocket connection established. Session: {}, User: {}, Game: {}.",
                 session.getId(), user.getId(), gameId);
+
+            // Register live presence; a reconnect cancels any pending forfeit timer for this user.
+            presenceTracker.connect(gameId, user.getId());
+            abandonmentService.onReconnect(gameId, user.getId());
 
             // Action stream - messages from current user
             Flux<SessionResponse<?>> actions = session.receive()
@@ -78,7 +86,6 @@ public class GameSessionHandler implements WebSocketHandler {
             // Broadcast stream - messages from other users in the same game
             Flux<SessionResponse<?>> broadcasts = gameSessionManager.getGameStream(gameId);
 
-            // TODO: should handle a JOIN_GAME event here? How would it work with spectator mode? What if the game is over?
             return session.send(
                 Flux.merge(broadcasts, actions)
                     .map(JSON_SERIALIZER::writeAsJson)
@@ -86,7 +93,20 @@ public class GameSessionHandler implements WebSocketHandler {
             ).doFinally(signalType -> {
                 log.info("WebSocket connection terminated with signal {}. Session: {}, User: {}, Game: {}.",
                     signalType, session.getId(), user.getId(), gameId);
-                handleValidGameEvent(gameId, new LeaveGameEvent(), user).subscribe();
+                // Disconnect does not mean leaving the game; the player keeps their seat and may
+                // reconnect. Only when their last connection drops during an active game does the
+                // abandonment timer decide the outcome.
+                boolean wasLastConnection = presenceTracker.disconnect(gameId, user.getId());
+                if (wasLastConnection) {
+                    abandonmentService.onPlayerDisconnect(gameId, user.getId())
+                        .subscribe(null, e -> log.error("Disconnect handling failed for game {} user {}",
+                            gameId, user.getId(), e));
+                }
+                // Complete the shared sink only when nobody is left listening, so we never disconnect
+                // surviving subscribers.
+                if (presenceTracker.isGameEmpty(gameId)) {
+                    gameSessionManager.removeSink(gameId);
+                }
             });
         });
     }

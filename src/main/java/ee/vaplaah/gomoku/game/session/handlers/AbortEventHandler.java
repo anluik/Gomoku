@@ -11,16 +11,19 @@ import ee.vaplaah.gomoku.session.message.GameEvent;
 import ee.vaplaah.gomoku.session.response.SessionResponse;
 import ee.vaplaah.gomoku.session.response.game.GameResponses;
 import ee.vaplaah.gomoku.user.User;
-import ee.vaplaah.gomoku.user.UserIdAndName;
 import ee.vaplaah.gomoku.utils.GameUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
+/**
+ * Aborts a game that has not truly started for the caller. A player may abort only until they have
+ * made their first move; afterwards they must resign instead (see {@link ResignEventHandler}). An
+ * abort ends the game with no winner.
+ */
 @Component
 @RequiredArgsConstructor
-public class ResignEventHandler implements GameEventHandler {
+public class AbortEventHandler implements GameEventHandler {
 
     private final GameSessionManager gameSessionManager;
     private final GameResultRepository gameResultRepository;
@@ -28,7 +31,7 @@ public class ResignEventHandler implements GameEventHandler {
 
     @Override
     public boolean supports(GameEventType eventType) {
-        return eventType == GameEventType.RESIGN;
+        return eventType == GameEventType.ABORT;
     }
 
     @Override
@@ -36,41 +39,34 @@ public class ResignEventHandler implements GameEventHandler {
         return true;
     }
 
-    @Transactional
     @Override
     public Mono<SessionResponse<?>> handle(GameEvent event, Game game, User user) {
-        // Resign is only meaningful once the player has committed to the game with a move
-        if (!GameUtils.hasUserMoved(game.getMoves(), user.getId())) {
+        if (GameUtils.hasUserMoved(game.getMoves(), user.getId())) {
             return Mono.error(new SessionMessageProcessingException(
-                GameResponses.resignNotAllowed(game.getId(), "You haven't moved yet; abort instead")));
+                GameResponses.abortNotAllowed(game.getId(), "You have already moved; resign instead")));
         }
         return completeGame(game)
-            .flatMap(savedGame -> saveGameResult(savedGame, user.getId())
-                .then(broadcastUserResigned(savedGame, user)));
-    }
-
-    private Mono<GameResult> saveGameResult(Game game, String userId) {
-        UserIdAndName otherPlayer = GameUtils.getOtherPlayer(game.getPlayers(), userId);
-        GameResult result = GameResult.builder()
-            .gameId(game.getId())
-            .winnerId(otherPlayer.getUserId())
-            .players(game.getPlayers())
-            .resultType(GameResult.ResultType.RESIGN)
-            .movesCount(game.getMoves().size())
-            .build();
-        return gameResultRepository.save(result);
+            .flatMap(savedGame -> saveAbortResult(savedGame)
+                .then(broadcastGameAborted(savedGame)));
     }
 
     private Mono<Game> completeGame(Game game) {
         game.setOver(true);
-        return this.gameRepository.save(game);
+        return gameRepository.save(game);
     }
 
-    private Mono<SessionResponse<?>> broadcastUserResigned(Game game, User user) {
-        UserIdAndName winner = GameUtils.getOtherPlayer(game.getPlayers(), user.getId());
-        SessionResponse<?> broadcast = GameResponses.userResigned(
-            game.getId(), UserIdAndName.fromUser(user), winner.getUserId(), true);
-        gameSessionManager.broadcast(game.getId(), broadcast);
+    private Mono<GameResult> saveAbortResult(Game game) {
+        return gameResultRepository.save(GameResult.builder()
+            .gameId(game.getId())
+            .winnerId(null)
+            .players(game.getPlayers())
+            .resultType(GameResult.ResultType.ABORT)
+            .movesCount(game.getMoves().size())
+            .build());
+    }
+
+    private Mono<SessionResponse<?>> broadcastGameAborted(Game game) {
+        gameSessionManager.broadcast(game.getId(), GameResponses.gameAborted(game.getId()));
         return Mono.empty();
     }
 }

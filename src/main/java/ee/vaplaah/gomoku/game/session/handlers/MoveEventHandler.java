@@ -58,7 +58,8 @@ public class MoveEventHandler implements GameEventHandler {
         game.getMoves().add(placed);
         game.setLastPlayer(user.getId());
         boolean won = GameUtils.isWinningMove(game.getMoves(), game.getWinningCount(), placed);
-        if (won) {
+        boolean draw = !won && game.getMoves().size() == game.getBoardSize() * game.getBoardSize();
+        if (won || draw) {
             game.setOver(true);
         }
 
@@ -67,9 +68,15 @@ public class MoveEventHandler implements GameEventHandler {
                 gameSessionManager.broadcast(saved.getId(),
                     GameResponses.moveMade(saved.getId(), placed, saved.getMoves().size()));
                 if (won) {
-                    return saveWinResult(saved, user.getId())
+                    return saveResult(saved, GameResult.ResultType.WIN, user.getId())
                         .doOnNext(result -> gameSessionManager.broadcast(saved.getId(),
                             GameResponses.gameWon(saved.getId(), user.getId())))
+                        .then(Mono.<SessionResponse<?>>empty());
+                }
+                if (draw) {
+                    return saveResult(saved, GameResult.ResultType.DRAW, null)
+                        .doOnNext(result -> gameSessionManager.broadcast(saved.getId(),
+                            GameResponses.gameDrawn(saved.getId())))
                         .then(Mono.<SessionResponse<?>>empty());
                 }
                 return Mono.<SessionResponse<?>>empty();
@@ -112,12 +119,12 @@ public class MoveEventHandler implements GameEventHandler {
         return null;
     }
 
-    private Mono<GameResult> saveWinResult(Game game, String winnerId) {
+    private Mono<GameResult> saveResult(Game game, GameResult.ResultType type, String winnerId) {
         return gameResultRepository.save(GameResult.builder()
             .gameId(game.getId())
             .winnerId(winnerId)
             .players(game.getPlayers())
-            .resultType(GameResult.ResultType.WIN)
+            .resultType(type)
             .movesCount(game.getMoves().size())
             .build());
     }

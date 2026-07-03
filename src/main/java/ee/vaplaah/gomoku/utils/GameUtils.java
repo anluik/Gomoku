@@ -22,6 +22,11 @@ public class GameUtils {
             .anyMatch(player -> player.getUserId().equals(userId));
     }
 
+    public static boolean hasUserMoved(List<Move> moves, String userId) {
+        return moves.stream()
+            .anyMatch(move -> move.userId().equals(userId));
+    }
+
     /**
      * Returns true if {@code last} completes a line of at least {@code winningCount} cells owned by
      * the same player. Only the four axes through the last move are scanned (horizontal, vertical,

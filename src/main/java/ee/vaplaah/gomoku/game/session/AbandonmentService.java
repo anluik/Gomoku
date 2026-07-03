@@ -29,10 +29,9 @@ import java.util.stream.Collectors;
  * Handles player abandonment: when a player's last connection drops during an active game, the
  * opponent is credited only if the player fails to reconnect within a grace period.
  *
- * <p>Outcome depends on how far the game got: until <em>both</em> players have made at least one
- * move the game is aborted ({@code ABORT}, no winner); once both have moved, the abandoning
- * player's opponent wins ({@code WIN}). If the opponent is also absent when the timer fires, the
- * game is aborted instead.
+ * <p>Outcome depends on whether moves have been made. Once both have moved, the abandoning
+ * player's opponent is credited the win — even if that opponent has also since
+ * disconnected. A committed game (both players moved) can never end in an abort.
  *
  * <p>Timers live in-memory and are single-server (MVP): a restart mid-grace strands the game. This
  * moves behind the game's owning node when the app scales out &mdash; see the game-session rule.
@@ -134,13 +133,14 @@ public class AbandonmentService {
 
     private Mono<Void> completeForfeit(Game game, String absentUserId) {
         UserIdAndName opponent = GameUtils.getOtherPlayer(game.getPlayers(), absentUserId);
-        boolean opponentAbsent = !presenceTracker.isPresent(game.getId(), opponent.getUserId());
         boolean bothMoved = bothPlayersHaveMoved(game);
 
-        // A win by abandonment can only be claimed once BOTH players have made at least one move.
-        if (!bothMoved || opponentAbsent) {
-            log.info("ABANDON result ABORT: game={} absentUser={} bothMoved={} opponentAbsent={}",
-                game.getId(), absentUserId, bothMoved, opponentAbsent);
+        // Once both have moved the result is committed: whoever abandons hands the win
+        // to their opponent — even if that opponent has also since disconnected. A committed game
+        // can never end in an abort.
+        if (!bothMoved) {
+            log.info("ABANDON result ABORT: game={} absentUser={} (both players had not yet moved)",
+                game.getId(), absentUserId);
             return saveResult(game, GameResult.ResultType.ABORT, null)
                 .doOnNext(r -> gameSessionManager.broadcast(game.getId(), GameResponses.gameAborted(game.getId())))
                 .then();

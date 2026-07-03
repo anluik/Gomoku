@@ -28,9 +28,10 @@ document the rest.
   truth; it was **removed from the message payload** so a client can't act on another game. One
   socket = one game (also = spectating by default).
 - **Events are typed, polymorphic messages.** `GameEvent` is an abstract Jackson base keyed on
-  `type`; subclasses: `JoinGameEvent`, `ResignEvent`, `StartGameEvent`, `MoveEvent(x,y,moveSeq)`,
+  `type`; subclasses: `JoinGameEvent`, `ResignEvent`, `AbortEvent`, `MoveEvent(x,y,moveSeq)`,
   `ChatEvent(text)`. `SessionMessageProcessor` deserializes + bean-validates the right subtype
-  automatically. (There is **no `LEAVE_GAME` event** — see disconnect handling below.)
+  automatically. (There is **no `LEAVE_GAME` event** — see disconnect handling below — and **no
+  incoming `START_GAME`**: the game auto-starts, see game start below.)
 - **Membership vs presence.** `Game.players` is *durable* membership (set on JOIN, survives a
   disconnect — nobody can take your seat). Live connections are *ephemeral* presence, ref-counted
   per `(gameId, userId)` in `GamePresenceTracker` (in-memory) so multi-tab / refresh doesn't look
@@ -41,23 +42,31 @@ document the rest.
   (`game.abandonment.grace-seconds`, default 30). Reconnect cancels it and broadcasts
   `PLAYER_RECONNECTED`. On expiry (still absent) the outcome depends on whether **both players have
   made at least one move**: until both have moved the game **aborts** (`GameResult(ABORT)`, no
-  winner — it never really started); once both have moved the opponent **wins**
-  (`GameResult(WIN)`); if the opponent is also absent it aborts. Guard-save-first with the same
-  optimistic retry. Timers are in-memory/single-server. To concede a game that is underway a player
-  sends `RESIGN`; before their first move it is instead an abort (a manual `ABORT` event is not yet
-  implemented — see backlog).
+  winner — it never really started); once both have moved the opponent **wins** (`GameResult(WIN)`)
+  — **even if the opponent has also since disconnected**. A committed game (both moved) can never end
+  in an abort. Guard-save-first with the same optimistic retry. Timers are in-memory/single-server.
+- **Game start (auto).** The creator is seated as `player[0]` at REST creation, so only the opponent
+  sends `JOIN_GAME`; when that join brings the game to 2 players, `JoinGameEventHandler` broadcasts
+  `GAME_STARTED` (with player order / first mover). There is no client start command.
+- **Ending a game as a player.** `MOVE` can end it (win, or `DRAW` when the board fills). Otherwise
+  the leave/concede action depends on whether the caller has moved: **before their first move →
+  `ABORT`** (`GameResult(ABORT)`, no winner; `AbortEventHandler`); **after their first move →
+  `RESIGN`** (opponent wins). The two are complementary and mutually gated — the wrong one is
+  rejected (`ABORT_NOT_ALLOWED` / `RESIGN_NOT_ALLOWED`). `ABORT` also works for a lone creator to
+  cancel an un-joined game.
 - **Handlers auto-discovered.** Each event has a `@Component` implementing `GameEventHandler` with
   opt-in default methods: `requiresActiveGame()`, `requiresParticipant()`, `retryOnConflict()`.
 - **Concurrency = optimistic locking + retry.** `@Version` on `Game`; `GameSessionHandler` wraps the
   `findById → checks → handle` chain in a bounded retry (max 3) on `OptimisticLockingFailureException`
-  when `handler.retryOnConflict()` is true. JOIN/MOVE/RESIGN opt in; CHAT/spectate do not. The
+  when `handler.retryOnConflict()` is true. JOIN/MOVE/RESIGN/ABORT opt in; CHAT/spectate do not. The
   `AbandonmentService` forfeit path uses the same retry independently.
 - **Guard-save-first principle (mandatory for retryable handlers):** perform the version-guarded
   `Game.save` *before* any non-idempotent side effect (inserting a `GameResult`, broadcasting), so a
   retry can't double-apply. `ResignEventHandler` was reordered for this.
 - **MOVE:** turn ownership (move-count parity × player order) is the primary guard; `moveSeq` dedupes
   stale/duplicate deliveries; bounds + occupancy validated; win via `GameUtils.isWinningMove`
-  (4-axis line scan); on win, persist `GameResult(WIN)` and broadcast game-over.
+  (4-axis line scan); on win, persist `GameResult(WIN)` and broadcast `GAME_WON`. If the move fills
+  the board with no winner it's a draw → `GameResult(DRAW)` + `GAME_DRAW`.
 - **CHAT:** pure broadcast, no DB, no lock; allowed for players and spectators.
 - **Broadcast seam:** `GameSessionManager` hides fan-out behind an in-memory `Sinks.Many` per game —
   the one class to swap for a distributed pub/sub later.
@@ -115,14 +124,16 @@ Reachable behind today's seams without changing handler logic:
       the game, and pre-start games left by a sole player linger in Mongo (no auto-cleanup).
 
 ### Features
-- [ ] `START_GAME`: the enum value exists but has **no handler** (routes to `unsupportedEvent`).
+- [x] **Game start** — DONE via auto-start: `JoinGameEventHandler` broadcasts `GAME_STARTED` when the
+      2nd player joins. Incoming `START_GAME` event removed (was unhandled). No explicit game-status
+      field was added — lifecycle state stays derived from `players` / `moves` / `isOver`.
+- [x] **Manual `ABORT` event** — DONE: `AbortEventHandler` ends the game with no winner, allowed only
+      before the caller's first move; `RESIGN` is gated to *after* the first move (complementary,
+      mutually exclusive). Also lets a lone creator cancel an un-joined game.
+- [x] **Draw detection** — DONE: `MoveEventHandler` ends a full board (`moves == boardSize²`) with no
+      winner as `GameResult(DRAW)` + `GAME_DRAW`.
 - [ ] Explicit `SPECTATE` presence event (currently implicit: connecting = read-only spectator).
-- [ ] **Manual `ABORT` event:** let a player *explicitly* abort a game they haven't yet moved in
-      (chess.com-style: abort is available until you make your first move, resign afterwards). The
-      abandonment path already treats "not both moved" as an abort; this is the deliberate,
-      immediate counterpart. New `GameEventType.ABORT` + handler; reject (require `RESIGN`) once the
-      player has moved.
-- [ ] Draw detection (board full, no winner) and any move-timeout rules.
+- [ ] Move-timeout / clock rules (e.g. forfeit on running out of time). Not started.
 
 ### Testing
 - [ ] No WebSocket integration tests yet. Priorities: turn enforcement, concurrent-join →

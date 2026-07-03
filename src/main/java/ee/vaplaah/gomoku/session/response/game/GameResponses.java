@@ -6,6 +6,7 @@ import ee.vaplaah.gomoku.session.response.SessionResponseEvent;
 import ee.vaplaah.gomoku.game.Move;
 import ee.vaplaah.gomoku.session.response.game.payload.ChatData;
 import ee.vaplaah.gomoku.session.response.game.payload.GameOutcomeData;
+import ee.vaplaah.gomoku.session.response.game.payload.GameStartedData;
 import ee.vaplaah.gomoku.session.response.game.payload.MoveData;
 import ee.vaplaah.gomoku.session.response.game.payload.PresenceData;
 import ee.vaplaah.gomoku.session.response.game.payload.UserJoinedData;
@@ -29,6 +30,13 @@ public class GameResponses {
                 "User " + player.getUsername() + " joined the game")
             .gameId(gameId)
             .data(new UserJoinedData(player, players))
+            .build();
+    }
+
+    public SessionResponse<GameStartedData> gameStarted(String gameId, List<UserIdAndName> players) {
+        return SessionResponse.<GameStartedData>success(SessionResponseEvent.GAME_STARTED, "Game started")
+            .gameId(gameId)
+            .data(new GameStartedData(players, players.get(0).getUserId()))
             .build();
     }
 
@@ -75,6 +83,13 @@ public class GameResponses {
         return SessionResponse.<GameOutcomeData>success(SessionResponseEvent.GAME_WON, "Game won")
             .gameId(gameId)
             .data(new GameOutcomeData(winnerId, true))
+            .build();
+    }
+
+    public SessionResponse<GameOutcomeData> gameDrawn(String gameId) {
+        return SessionResponse.<GameOutcomeData>success(SessionResponseEvent.GAME_DRAW, "Game drawn")
+            .gameId(gameId)
+            .data(new GameOutcomeData(null, true))
             .build();
     }
 
@@ -143,6 +158,18 @@ public class GameResponses {
 
     public SessionResponse<Void> invalidMove(String gameId, String reason) {
         return SessionResponse.<Void>error(SessionResponseEvent.INVALID_MOVE, reason)
+            .gameId(gameId)
+            .build();
+    }
+
+    public SessionResponse<Void> abortNotAllowed(String gameId, String reason) {
+        return SessionResponse.<Void>error(SessionResponseEvent.ABORT_NOT_ALLOWED, reason)
+            .gameId(gameId)
+            .build();
+    }
+
+    public SessionResponse<Void> resignNotAllowed(String gameId, String reason) {
+        return SessionResponse.<Void>error(SessionResponseEvent.RESIGN_NOT_ALLOWED, reason)
             .gameId(gameId)
             .build();
     }

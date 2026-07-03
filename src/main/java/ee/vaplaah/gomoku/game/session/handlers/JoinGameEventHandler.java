@@ -81,6 +81,12 @@ public class JoinGameEventHandler implements GameEventHandler {
         // Broadcast to all subscribers of this game
         gameSessionManager.broadcast(gameId, broadcastMessage);
 
+        // The game auto-starts the moment the second player joins (the creator is already player[0]
+        // from game creation, so this join is the opponent). Notify everyone that play may begin.
+        if (savedGame.getPlayers().size() == MAX_PLAYERS) {
+            gameSessionManager.broadcast(gameId, GameResponses.gameStarted(gameId, savedGame.getPlayers()));
+        }
+
         // Empty direct response to websocket message. Update is communicated via broadcast.
         return Mono.empty();
     }

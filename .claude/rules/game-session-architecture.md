@@ -136,8 +136,20 @@ Reachable behind today's seams without changing handler logic:
 - [ ] Move-timeout / clock rules (e.g. forfeit on running out of time). Not started.
 
 ### Testing
-- [ ] No WebSocket integration tests yet. Priorities: turn enforcement, concurrent-join →
-      "game full", win detection + persisted `GameResult`, chat fan-out to spectators.
+- [x] **`GameSessionHandler` unit tests** — DONE (`GameSessionHandlerTest`, Surefire): handshake
+      gameId validation, presence/forfeit wiring, event dispatch, precondition gates (not-found /
+      already-over / non-participant + their opt-outs), error containment (session survives bad
+      payloads and handler crashes), optimistic-lock retry (success / exhaustion / opt-out), and
+      disconnect cleanup. Uses a mocked `WebSocketSession` + scripted fake `GameEventHandler`.
+- [x] **Per-handler unit tests** — DONE for all five event handlers (`MoveEventHandlerTest`,
+      `JoinGameEventHandlerTest`, `ResignEventHandlerTest`, `AbortEventHandlerTest`,
+      `ChatEventHandlerTest`): dispatch contracts (supports/gates/retry opt-in), every validation
+      rejection (with no-side-effect assertions), win/draw/win-on-last-cell outcomes, auto-start on
+      second join, abort/resign complementarity, lone-creator abort, guard-save-first ordering via
+      `InOrder`, and save-failure → no side effects.
+- [ ] No WebSocket integration tests yet (real socket + real handlers + Mongo). Priorities: turn
+      enforcement, concurrent-join → "game full", win detection + persisted `GameResult`, chat
+      fan-out to spectators.
 
 ## Guardrails when extending this layer
 
